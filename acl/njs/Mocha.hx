@@ -1,4 +1,4 @@
-package acl;
+package acl.njs;
 
 using acl.Core;
 using scuts.core.Validations;
