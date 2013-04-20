@@ -9,6 +9,7 @@ Express
 Nano
 Request
 Commander
+Mocha
 
 This is a WIP, changing a lot, not documented and not recommended for general use. It's here as a backup. You
 may find some tasty morsels though.
