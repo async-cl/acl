@@ -26,13 +26,7 @@ class Session {
 	
 	public static function create(sess:TSession,o:Dynamic):TOutcome<String,String> {
 		var oc = Core.outcome();
-		#if TEST
-		trace("CREATING TEST SESSION");
-		var sID = "TESTSID";
-		#else
 		var sID = uuid.v1();
-		#end
-		trace("Serializing "+o);
 		sess.redis.set(sID,haxe.Serializer.run(o),function(err) {
 			oc.complete((err != null) ? Failure(err) : Success(sID));
 		});
@@ -41,7 +35,6 @@ class Session {
 	
 	public static function update<T>(sess:TSession,sID:String,o:T) {
 		var oc = Core.outcome();
-		trace("updating "+sID);
 		sess.redis.set(sID,haxe.Serializer.run(o),function(err) {
 			oc.complete((err != null) ? Failure(err) : Success(sID));
 		});
@@ -51,7 +44,6 @@ class Session {
 	public static function get<T>(sess:TSession,sID):TOutcome<String,T> {
 		var oc = Core.outcome();
 		sess.redis.get(sID,function(err,o) {
-		trace("session for "+sID+", err = "+err+" obj :"+o);
 			oc.complete((err != null) ? Failure(err) : Success(haxe.Unserializer.run(o)));
 		});
 		return oc;
