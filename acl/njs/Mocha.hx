@@ -20,7 +20,7 @@ class Mocha {
 		untyped __js__("describe(thing,fn)");
 	}
 	
-	public static function it(should:String,fn:Dynamic) {
+	public static function it(should:String,?fn:Dynamic) {
 		untyped __js__("it(should,fn)");
 	}
 	
