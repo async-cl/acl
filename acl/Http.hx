@@ -94,8 +94,9 @@ class Http {
 		      
 		if (urlEncoded)
 		    Reflect.setField(headers,'Content-Type','application/x-www-form-urlencoded');
-		else
-		    Reflect.setField(headers,"Content-Length",Std.string(payload).length);
+		else {
+			// set headers accordingly externally
+		}
 
 		var request = doRequest(requester,{
 			  host:pu.hostname,
@@ -167,7 +168,8 @@ class Http {
 			return unpack(packed);
 		});
 	}
-	
+
+		
 	public static function get_<T>(url:String,?params:Dynamic,?headers:Dynamic):TOutcome<String,T> {
 		#if nodejs
 			return nodeGet(url,params,headers).map(mapStruct);
@@ -176,9 +178,16 @@ class Http {
 		#end
 	}
 
+	/**
+		Post and return typed json stuctures.
+	*/
 	public static function post_<T>(url:String,payload:Dynamic,urlEncoded=true,?headers:Dynamic):TOutcome<String,T> {  
 		#if nodejs
-			return nodePost(url,payload,urlEncoded,headers).map(mapStruct);
+			payload = haxe.Json.stringify(payload);
+			if (headers == null) headers = {};
+		    Reflect.setField(headers,"Content-Length",payload.length);
+			Reflect.setField(headers,'Content-Type','application/json');
+			return nodePost(url,payload,false,headers).map(mapStruct);
 		#else
 			return haxeRequest(url,true,payload,headers).map(mapStruct);
 		#end		
