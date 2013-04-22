@@ -33,9 +33,9 @@ typedef TRelation = {
  	name:String
  };
  
-typedef TCombineVal<T> = Iterable<TVal<String,T>>;
-typedef TCombineIn<T> = Iterable<TOutcome<String,T>>;
-typedef TCombineOut<T> = TOutcome<String,TCombineVal<T>>;
+typedef TCombineVal<F,S> = Iterable<TVal<F,S>>;
+typedef TCombineIn<F,S> = Iterable<TOutcome<F,S>>;
+typedef TCombineOut<F,S> = TOutcome<F,TCombineVal<F,S>>;
 
 class Core {
 	
@@ -84,27 +84,15 @@ class Core {
 		return null;
 	}
 	
-	public static function validate<F,S,T>(p:TOutcome<F,S>,fn:S->TOutcome<F,T>):TOutcome<F,T> {
-
-		var oc = new TPromise<TVal<F,T>>();
-
-		if(p.isCancelled()) {
-			oc.cancel();
-		} else {
-			p.onComplete(function(v) {
-				if (v.isSuccess()) {
-					var next = fn(v.extract());
-					if (next != null)
-						next.onComplete(oc.complete);
-				} else {
-					trace("cancelling due to failure "+v);
-					oc.cancel();
-				}
-				return null;
-			});
-		
-		}
-		return oc;
+	public static function onSuccess<F,S,T>(p:TOutcome<F,S>,fn:S->Void,?fail:F->Void) {
+		p.onComplete(function(v) {
+			if (v.isSuccess())
+				fn(v.extract());
+			else 
+				if (fail != null)
+					fail(v.extractFailure());
+			return null;
+		});
 	}
 
 	public static function chain<F,F2,S,T,D>(?start:TOutcome<F,S>,?data:D):TChain<F2,T,D> {
@@ -152,9 +140,16 @@ class Core {
 	/**
 		Tap into the chain and get any data.
 	*/
-	public static function tap<F,S,D>(chain:TChain<F,S,D>,fn:D->Void):TChain<F,S,D> {
-		fn(chain.data);
-		return chain;	
+	public static function tap<F,S,D>(chain:TChain<F,S,D>,fn:S->D->Void):TChain<F,S,D> {
+		return {
+			prm:chain.prm.map(function(v) {
+				if (v.isSuccess()) {
+					fn(v.extract(),chain.data);
+				}
+				return v;
+			}),
+			data:chain.data	
+		};
 	}
 	
 	public static function dechain<F,F2,S,D>(chain:TChain<F,S,D>,?fn:S->Dynamic):TOutcome<F2,S> {
@@ -174,8 +169,8 @@ class Core {
 		return oc;
 	}
 
-	public static function combine<F,S>(outcomes:TCombineIn<S>):TCombineOut<S> {
-		var oc:TCombineOut<S> = Core.outcome();
+	public static function combine<F,S>(outcomes:TCombineIn<F,S>):TCombineOut<F,S> {
+		var oc:TCombineOut<F,S> = Core.outcome();
 		outcomes.combineIterable()
 		.onComplete(function(i) {
 			oc.complete(Success(i));
