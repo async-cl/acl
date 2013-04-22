@@ -47,4 +47,9 @@ class Cli {
 		return cli;
 	}
 
+	public static function action2(cli:TCli,action:Dynamic->Dynamic->Void) {
+		cli.cmd.action(action);
+		return cli;
+	}
+
 }
