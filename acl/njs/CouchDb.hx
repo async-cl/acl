@@ -60,21 +60,21 @@ typedef TReplyHead = {headers:TCouchHeaders};
 
 typedef TReplyFile = {file:Dynamic};
 
-typedef TCouchRows = {
+typedef TCouchRows<T> = {
 	id:String,
 	key:String,
-	value:Dynamic,
-	?doc:Dynamic
+	value:T,
+	?doc:T
 };
 
-typedef TCouchRowBody = {
+typedef TCouchRowBody<T> = {
 	total_rows:Int,
 	offset:Int,
-	rows:Array<TCouchRows>
+	rows:Array<TCouchRows<T>>
 }
 
-typedef TReplyRows = {
-	body:TCouchRowBody,
+typedef TReplyRows<T> = {
+	body:TCouchRowBody<T>,
 	headers:TCouchHeaders	
 };
 
@@ -225,19 +225,19 @@ class CouchDb {
 		return oc;
 	}
 	
-	public static function list(db:TCouchDb,?params:Dynamic):TOutcome<String,TReplyRows> {
-		var oc = new TPromise<TVal<String,TReplyRows>>();
+	public static function list<T>(db:TCouchDb,?params:Dynamic):TOutcome<String,TReplyRows<T>> {
+		var oc = new TPromise<TVal<String,TReplyRows<T>>>();
 		db._bucket.list(params,function(err,body,headers) {
 			oc.complete((err != null) ? Failure(error("list",err)) : Success({body:body,headers:headers}));
 		});
 		return oc;
 	}
 	
-	public static function fetch(db:TCouchDb,ids:Array<String>,?params:Dynamic):TOutcome<String,TReplyRows> {
+	public static function fetch<T>(db:TCouchDb,ids:Array<String>,?params:Dynamic):TOutcome<String,TReplyRows<T>> {
 		if (params == null)
 			params = {};
 			
-		var oc = new TPromise<TVal<String,TReplyRows>>();
+		var oc = new TPromise<TVal<String,TReplyRows<T>>>();
 		db._bucket.fetch({keys:ids},params,function(err,body,headers) {
 			oc.complete((err != null) ? Failure(error("fetch",err)) : Success({body:body,headers:headers}));
 		});
@@ -260,10 +260,10 @@ class CouchDb {
 		return oc;
 	}
 	
-	public static function view(db:TCouchDb,design:String,view:String,?params:TCouchKeys,includeDocs=false):TOutcome<String,TReplyRows> {
-		var oc = new TPromise<TVal<String,TReplyRows>>();
+	public static function view<T>(db:TCouchDb,design:String,view:String,?params:TCouchKeys,includeDocs=false):TOutcome<String,TReplyRows<T>> {
+		var oc = new TPromise<TVal<String,TReplyRows<T>>>();
 	
-		var p:Dynamic = if (params == null) null else switch(params) {
+		var p:Dynamic = if (params == null) {} else switch(params) {
 			case KEY(k): {key:k};
 			case KEYS(ks): { keys:ks };
 		};
@@ -271,17 +271,19 @@ class CouchDb {
 		if (includeDocs) {
 			Reflect.setField(p,"include_docs",true);
 		}
+		
 		db._bucket.view(design,view,p,function(err,body,headers) {
 			oc.complete((err != null) ? Failure(error("view",err)) : Success({body:body,headers:headers}));
 		});
 		return oc;
 	}
 
-	public static function view_(db:TCouchDb,design:String,viewName:String,?params:TCouchKeys,includeDocs=false) {
-		return view(db,design,viewName,params,includeDocs)
-				.map(Validations.flatMap._2(function(rr:TReplyRows) { 
-					return Success(rr.body.rows.map(function(r) return r.doc)); 
-				}));
+	public static function view_<T>(db:TCouchDb,design:String,viewName:String,?params:TCouchKeys,includeDocs=false):TOutcome<String,Array<T>> {
+		return 
+			view(db,design,viewName,params,includeDocs)
+			.map(Validations.flatMap._2(function(rr:TReplyRows<T>) { 
+				return Success(rr.body.rows.map(function(r) return if (includeDocs) r.doc else r.value)); 
+			}));
 	}
 			
 	public static function createViews(db:TCouchDb,designName:String,views:Dynamic):TOutcome<String,TReply> {
