@@ -33,6 +33,15 @@ class Mocha {
 		untyped __js__("beforeEach(fn)");
 	}
 	
+	public static function before(fn:Void->Void) {
+		untyped __js__("before(fn)");
+	}
+	
+	public static function before_(fn:(Void->Void)->Void) {
+		untyped __js__("before(fn)");
+	}
+	
+	
     public static function fail(actual:Dynamic,expected:Dynamic,message:Dynamic,operator:Dynamic) {
     	
     }
