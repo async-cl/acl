@@ -42,7 +42,18 @@ class Cli {
 		return cli;
 	}
 	
-	public static function action(cli:TCli,action:Dynamic->Void) {
+	public static function action(cli:TCli,action:Dynamic) {
+		Sys.Assert.ok(Reflect.isFunction(action));
+		cli.cmd.action(action);
+		return cli;
+	}
+
+	public static function action0(cli:TCli,action:Void->Void) {
+		cli.cmd.action(action);
+		return cli;
+	}
+
+	public static function action1(cli:TCli,action:Dynamic->Void) {
 		cli.cmd.action(action);
 		return cli;
 	}
