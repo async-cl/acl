@@ -71,13 +71,10 @@ class Http {
 		  host:pu.hostname,
 		  port:getPort(pu.protocol,pu.port),
 		  method:"GET",
-		  path:pu.path,
+		  path:pu.path+"?"+Node.querystring.stringify(params),
 		  headers:headers
 		});
 
-		if (params != null)
-		    request.req.write(Node.querystring.stringify(params));
-		  
 		request.req.end();
 		return request.oc;
 		
