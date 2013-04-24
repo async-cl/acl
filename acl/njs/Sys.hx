@@ -295,11 +295,6 @@ class Sys {
 
   // Async FS calls
 
-    /**
-     Checks to see if a file exists.
-     @param path to file
-     @return Failure(path) if does not exist, Success(path) if does exist
-  **/
   public static function exists(path:String):TOutcome<String,String> {
     var oc = Core.outcome();
     Node.path.exists(path,function(exists) {
@@ -308,12 +303,6 @@ class Sys {
     return oc;
   }
   
-  /**
-     renames a file
-     @param path to original file
-     @param path to new file
-     @return Either an error message (left) or the new file name (right)
-  **/
   public static function rename(from:String,to:String):TOutcome<String,String> {
     var prm = Core.outcome();
     Node.fs.rename(from,to,function(err) {
@@ -322,11 +311,6 @@ class Sys {
     return prm;
   }
 
-  /**
-     Stat a file.
-     @param path to stat
-     @return Failure(error msg), Success({path:String,stat:NodeStat})
-  **/ 
   public static function stat(path:String):TOutcome<String,{path:String,stat:NodeStat}>{
     var prm = Core.outcome();
     Node.fs.stat(path,function(err,stat) {
@@ -351,11 +335,6 @@ class Sys {
     return prm;
   }
 
-  /**
-     links a file,
-     @param
-     @return either an error msg or the dstPath on success
-  **/
   public static function link(srcPath:String,dstPath:String):TOutcome<String,String>{
     var prm = Core.outcome();
     Node.fs.link(srcPath,dstPath,function(err) {
@@ -364,12 +343,6 @@ class Sys {
     return prm;
   }
 
-
-  /**
-     deletes a file
-     @param
-     @return an error message (left) or the srcPath (right)
-  **/
   public static function unlink(srcPath:String):TOutcome<String,String>{
     var prm = Core.outcome();
     Node.fs.unlink(srcPath,function(err) {
@@ -458,11 +431,6 @@ class Sys {
     return prm;
   }
 
-  /**
-     open a file
-     @param
-     @return an error message (left) or the file handle (right)
-  **/
   public static function open(path:String,flags:String,mode:Int):TOutcome<String,Int>{
     var prm = Core.outcome();
     Node.fs.open(path,flags,mode,function(err,i) {
