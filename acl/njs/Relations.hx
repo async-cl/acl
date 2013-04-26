@@ -40,7 +40,7 @@ class Relations {
 	*/
 	public static function unlink(r:TRelation,parentID:String,childID:String):TOutcome<String,String> {
 		var oc = Core.outcome();
-		db.view("caan","rel-child-parent",KEY([r.name,parentID,childID])).onComplete(function(v) {
+		db.view("wise","rel-child-parent",KEY([r.name,parentID,childID])).onComplete(function(v) {
 			if (v.isSuccess()) {
 				var z = v.extract();
 				if (z.body.rows.length == 1) {
@@ -64,12 +64,11 @@ class Relations {
 	}
 	
 	public static function linked<T>(r:TRelation,parentID:String):TOutcome<String,TReplyRows<T>> {
-		return db.view("caan","rel-parent-child",KEY([r.name,parentID]),true);
+		return db.view("wise","rel-parent-child",KEY([r.name,parentID]),true);
 	}
 	
 	public static function linked_<T>(r:TRelation,parentID:String):TOutcome<String,Array<T>> {
 		return linked(r,parentID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
-		trace("linked "+haxe.Json.stringify(r));
 			return Success(r.body.rows.map(function(row) { return row.doc;}));
 		}));
 	}
