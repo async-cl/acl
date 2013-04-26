@@ -6,6 +6,7 @@ using scuts.core.Validations;
 using scuts.core.Promise;
 using scuts.core.Promises;
 
+
 typedef TPromise<T> = scuts.core.Promise<T>;
 typedef TEvent<T> = acl.Event<T>;
 typedef TVal<F,S> = scuts.core.Validation<F,S>
@@ -17,6 +18,11 @@ typedef TChain<F,S,D> = {
 	prm:TOutcome<F,S>,
 	data:D
 };
+
+enum TRHashReply {
+ 	HNew;
+ 	HUpdated;
+ }
 
 typedef  TCouchObj = {
 	?_id:String,
@@ -82,6 +88,19 @@ class Core {
 	public static function print(d:Dynamic) {
 		trace(d);
 		return null;
+	}
+	
+	public static function fmap<F,S,T>(p:TOutcome<F,S>,fn:S->TOutcome<F,T>):TOutcome<F,T> {
+		return p.flatMap(function(v) {
+			return if (v.isSuccess()) fn(v.extract()) else Core.failure(v.extractFailure());
+		});		
+	}
+	
+	
+	public static function map_<F,S,T>(p:TOutcome<F,S>,fn:S->T):TOutcome<F,T> {
+		return p.map(function(v) {
+			return if (v.isSuccess()) Success(fn(v.extract())) else Failure(v.extractFailure());
+		});
 	}
 	
 	public static function onSuccess<F,S,T>(p:TOutcome<F,S>,fn:S->Void,?fail:F->Void) {
@@ -185,4 +204,43 @@ class Core {
 	public static function combineMap<F,S,A,B>(outcomes:Iterable<TOutcome<F,S>>,fn:Iterable<TVal<F,S>>->B):TPromise<B> {
 		return outcomes.combineIterableWith(fn);
 	}
+	
+	/**
+		Call the given function only after any other calls to the same function have completed in sequence.
+	*/
+	public static function serializeCall<F,S>(fn:Void->TOutcome<F,S>) {
+		var Q:Array<TOutcome<F,S>> = [];
+		var processing = false;
+		
+		function recur() {
+			fn().onComplete(function(v) {
+				var oc = Q.shift();
+				oc.complete(v);
+				if (Q.length > 0)
+					recur();
+				else
+					processing = false;
+				return null;
+			});
+		}
+		
+		return function() {
+			var oc = Core.outcome();
+			Q.push(oc);
+			if (!processing) {
+				processing = true;
+				recur();
+			}
+			return oc;
+		};
+	}
+		
+	public static function mapOutcome<F,S>(o:TOption<S>,f:F):TOutcome<F,S> {
+		return switch(o) {
+			case Some(s): Core.success(s);
+			case None: Core.failure(f);
+		};
+	}
+
 }
+
