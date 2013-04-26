@@ -15,11 +15,6 @@ import js.Node;
  typedef TRHash<T> = {
  	_name:String
  }
-
- enum TRHashReply {
- 	HNew;
- 	HUpdated;
- }
    
  // A Redis Hash
  
