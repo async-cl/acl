@@ -95,7 +95,7 @@ class CouchDb {
 	static var N:Dynamic->Dynamic = null;
 
 	static function error(funcName:String,err:String) {
-		return "Couch::"+funcName+": "+err;
+		return "CouchDb."+funcName+" "+err;
 	}
 	
 	public static function db(cnf:TCouchConf,deleteDB=false):TOutcome<String,TCouchDb> {
@@ -273,7 +273,7 @@ class CouchDb {
 		}
 		
 		db._bucket.view(design,view,p,function(err,body,headers) {
-			oc.complete((err != null) ? Failure(error("view",err)) : Success({body:body,headers:headers}));
+			oc.complete((err != null) ? Failure(error("view '"+view+"'",err)) : Success({body:body,headers:headers}));
 		});
 		return oc;
 	}
@@ -321,8 +321,10 @@ class CouchDb {
                 	createViews(db,designDoc,views).onComplete(function(v) {
                 		if(v.isSuccess())
                 			oc.complete(Success(v.extract()));
-                		else
+                		else {
+                			trace("View create failure "+v.extractFailure());
                 			oc.complete(Failure(error("viewsFromDir3",v.extractFailure())));
+                		}
                 		return null;
                 	});
                 		
