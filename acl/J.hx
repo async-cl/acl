@@ -36,11 +36,11 @@ class J {
 	*/
 	public static function makeRefs(refs:Array<String>):Dynamic {
 		return refs.foldLeft({},function(acc,el) {
-			var ref = J.q("#"+el);
+			var ref = J.q(el);
 			if (ref == null) {
-				Core.err("#"+el+" does not exist on page");
+				Core.err(el+" does not exist on page");
 			} else {
-				Reflect.setField(acc,el,ref);
+				Reflect.setField(acc,el.substr(1),ref);
 			}
 			return acc;
 		});
