@@ -37,7 +37,7 @@ class J {
 	public static function makeRefs(refs:Array<String>):Dynamic {
 		return refs.foldLeft({},function(acc,el) {
 			var ref = J.q(el);
-			if (ref == null) {
+			if (ref.length == 0) {
 				Core.err(el+" does not exist on page");
 			} else {
 				Reflect.setField(acc,el.substr(1),ref);
