@@ -42,8 +42,8 @@ class Mocha {
 	}
 	
 	
-    public static function fail(actual:Dynamic,expected:Dynamic,message:Dynamic,operator:Dynamic) {
-    	
+    public static function fail(actual:Dynamic,expected:Dynamic,message:Dynamic,?operator:Dynamic) {
+    	_assert.fail(actual,expected,message,operator);	
     }
 
 	public static function qassert<F,S>(prm:TOutcome<F,S>,done:Void->Void,fn:TVal<F,S>->S->Dynamic->Void,actual:S,?msg:String) {
