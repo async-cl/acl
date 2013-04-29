@@ -35,6 +35,14 @@ class Relations {
 		return db.insert_({id1:parentID,id2:childID,rel:r.name,docType:"relation"});
 	}
 	
+	public static function linkWithInsert(r:TRelation,parentID:String,child:TCouchObj):TOutcome<String,TCouchIDRev> {
+		//first insert the child object ...
+		return db.insert_(child).fmap(function(childIDRev) {
+			// then relate the child to the parent
+			return link(r,parentID,childIDRev.id);
+		});
+	}
+	
 	/**
 		Remove the relation to the child object. Note, this does not delete the child, just the relation.
 	*/
@@ -74,3 +82,4 @@ class Relations {
 	}
 
 }
+
