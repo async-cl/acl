@@ -177,8 +177,14 @@ class Express {
 	
 	public static function onCompletedReply<F,S>(oc:TOutcome<F,S>,res:TExpressResp) {
 		oc.onComplete(function(v) {
-			res.send(200,haxe.Serializer.run(v));
+			validationReply(v,res);
 			return null;
 		});
 	}
+	
+	public static inline function validationReply<F,S>(v:TVal<F,S>,res:TExpressResp) {
+		res.send(200,haxe.Serializer.run(v));
+	}
+	
+	
 }
