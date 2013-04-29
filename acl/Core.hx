@@ -27,7 +27,7 @@ enum TRHashReply {
 typedef  TCouchObj = {
 	?_id:String,
 	?_rev:String,
-	docType:String
+	?docType:String
 };
 
 typedef TCouchIDRev = {
@@ -178,10 +178,11 @@ class Core {
 		return cast chain.prm;
 	}
 	
-	public static function finalData<F,S,D>(chain:TChain<F,S,D>,fn:S->D->Void):TOutcome<F,D> {
+	public static function finalData<F,S,D>(chain:TChain<F,S,D>,?fn:S->D->Void):TOutcome<F,D> {
 		var oc  = new TPromise<TVal<F,D>>();
 		value(chain,function(val) {
-			fn(val,chain.data);
+			if (fn != null)
+				fn(val,chain.data);
 			oc.complete(Success(chain.data));
 			return null;
 		});
