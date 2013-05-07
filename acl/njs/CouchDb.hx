@@ -252,7 +252,8 @@ class CouchDb {
 		return oc;
 	}
 	
-	public static function putAttach(db:TCouchDb,id:String,rev:String,name:String,data:Dynamic,mimeType):TOutcome<String,TReply> {
+
+		public static function putAttach(db:TCouchDb,id:String,rev:String,name:String,data:Dynamic,mimeType):TOutcome<String,TReply> {
 		var oc = new TPromise<TVal<String,TReply>>();
 		db._bucket.attachment.insert(id,name,data,mimeType,{rev:rev},function(err,body,headers) {
 			oc.complete((err != null) ? Failure(error("putAttach",err)) : Success({body:body,headers:headers}));
