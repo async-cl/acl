@@ -10,8 +10,12 @@ import JQuery;
 using scuts.core.Arrays;
 import JQuery;
 
-typedef TJq = JQuery;
+import jQuery.plugins.jQueryTools.Tabs;
+import jQuery.plugins.jQueryTools.Overlay;
+import jQuery.plugins.jQueryTools.Validator;
 
+typedef TJq = JQuery;
+typedef TJqEvent = JQuery.JQueryEvent;
 enum EMixedRefs {
 	S(selector:String); //self named
 	N(name:String,selector:String); // explicitly named
@@ -72,5 +76,9 @@ class J {
 		});
 	}
 	
+	public static function validator(jq:TJq,?options:Dynamic):ValidatorAPI {	
+		var v = Validator.validator(jq,options);
+        return Validator.getValidatorAPI(v);
+	}
 
 }
