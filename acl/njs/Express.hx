@@ -22,19 +22,22 @@ typedef TExpressServer = { > TExpressServerAttrs,
 	_server:NodeHttpServer,
 };
 
+
+typedef TExpressFile = {
+	size:Int,
+	path:String,
+	name:String,
+	type:String,
+	length:Int,
+	fileName:String,
+	mime:String
+}	
+
 typedef TExpressReq = {
 	var params:Dynamic;
 	var query:Dynamic;
 	var body:Dynamic;
-	var files:{
-		size:Int,
-		path:String,
-		name:String,
-		type:String,
-		length:Int,
-		fileName:String,
-		mime:String
-		};		
+	var files:Dynamic;	
 	function param(name:String):Dynamic;
 	function route():String;
 	var cookies:String;
