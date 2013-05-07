@@ -5,9 +5,10 @@ using acl.Core;
 using scuts.core.Validations;
 using scuts.core.Promises;
 
-
 #if nodejs
 import js.Node;
+#else
+import js.Browser;
 #end
 
 class Http {
@@ -15,8 +16,7 @@ class Http {
 	public static inline function unpack<F,S>(s:String):TVal<F,S> {
 		return haxe.Unserializer.run(s);
 	}
-	
-	
+		
 #if nodejs
 	static function doRequest(requester:Dynamic,options:Dynamic):{oc:TOutcome<String,String>,req:NodeHttpClientReq} {
 		var oc = Core.outcome();
@@ -125,9 +125,13 @@ class Http {
 			oc.complete(Failure(e));
 		};
 		
-		if (params != null) {
-			for (f in Reflect.fields(params)) {
-				hr.setParameter(f,Reflect.field(params,f));	
+		if (post) {
+			hr.setPostData(params);
+		} else {
+			if (params != null) {
+				for (f in Reflect.fields(params)) {
+					hr.setParameter(f,Reflect.field(params,f));	
+				}
 			}
 		}
 		
@@ -140,6 +144,67 @@ class Http {
 		hr.request(post);
 		return oc;
 	}
+	
+	public static function fileUpload<T>(form, action_url):TOutcome<String,T> {
+		var oc = Core.outcome();
+        trace('creating iframe');
+        var iframe = Browser.document.createElement("iframe");
+        iframe.setAttribute("id", "upload_iframe");
+        iframe.setAttribute("name", "upload_iframe");
+        iframe.setAttribute("width", "0");
+        iframe.setAttribute("height", "0");
+        iframe.setAttribute("border", "0");
+        iframe.setAttribute("style", "width: 0; height: 0; border: none;");
+        
+        // Add to document...
+        form.parentNode.appendChild(iframe);
+        Reflect.field(Browser.window.frames,"upload_iframe").name = "upload_iframe";
+        
+        var iframeId = Browser.document.getElementById("upload_iframe");
+        
+        // Add event...
+        var eventHandler = function (e) {
+            
+            //iframeId.removeEventListener("load", eventHandler, false);
+            
+            // Message from server...
+            var content = null;
+            untyped {
+                if (iframeId.contentDocument) {
+                    content = iframeId.contentDocument.body.innerHTML;
+                } else if (iframeId.contentWindow) {
+                    content = iframeId.contentWindow.document.body.innerHTML;
+                } else if (iframeId.document) {
+                    content = iframeId.document.body.innerHTML;
+                }
+            }
+            
+            oc.complete(Http.unpack(content));
+
+            function cleanup() {
+                iframeId.parentNode.removeChild(iframeId);
+                trace('removed iframid');
+            }
+            
+            // Del the iframe...
+            Browser.window.setTimeout(cleanup, 250);
+        }
+        
+        if (iframeId.addEventListener != null) 
+        	iframeId.addEventListener("load", eventHandler, true);
+        
+        // Set properties of form...
+        form.setAttribute("target", "upload_iframe");
+        form.setAttribute("action", action_url);
+        form.setAttribute("method", "post");
+        form.setAttribute("enctype", "multipart/form-data");
+        form.setAttribute("encoding", "multipart/form-data");
+        
+        // Submit the form...
+        form.submit();
+        return oc;
+	}
+	
 
 #end
 
@@ -178,12 +243,13 @@ class Http {
 	/**
 		Post and return typed json stuctures.
 	*/
-	public static function post_<T>(url:String,payload:Dynamic,urlEncoded=true,?headers:Dynamic):TOutcome<String,T> {  
+	public static function post_<T>(url:String,payload:Dynamic,urlEncoded=false,?headers:Dynamic):TOutcome<String,T> {  
+		if (headers == null) headers = {};
+		Reflect.setField(headers,'Content-Type','application/json');
+		payload = haxe.Json.stringify(payload);
+		Reflect.setField(headers,"Content-Length",payload.length);
+			
 		#if nodejs
-			payload = haxe.Json.stringify(payload);
-			if (headers == null) headers = {};
-		    Reflect.setField(headers,"Content-Length",payload.length);
-			Reflect.setField(headers,'Content-Type','application/json');
 			return nodePost(url,payload,false,headers).map(mapStruct);
 		#else
 			return haxeRequest(url,true,payload,headers).map(mapStruct);
