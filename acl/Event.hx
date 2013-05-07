@@ -19,7 +19,7 @@ class Event<T> {
     _unsubscribes = 0;
   }
   
-  public function inform(v:T) {
+  public function emit(v:T) {
 
     #if debug
     if (v == null) {
@@ -39,7 +39,7 @@ class Event<T> {
       }
   }
     
-  public function await(cb:T->Void,?info:Dynamic):Void->Void {
+  public function on(cb:T->Void,?info:Dynamic):Void->Void {
       var  h = {handler:cb,info:info};
     
     _observers.push(h);

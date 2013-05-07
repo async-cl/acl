@@ -16,16 +16,16 @@ class ReadStreamImpl extends acl.Event<SysReadStreamEvents> implements SysReadSt
     super();
     _readStream = rs;
     _readStream.addListener(NodeC.EVENT_STREAM_DATA,function(d) {
-        inform(Data(new String(d)));
+        emit(Data(new String(d)));
       });
     _readStream.addListener(NodeC.EVENT_STREAM_END,function() {
-        inform(End);
+        emit(End);
       });
     _readStream.addListener(NodeC.EVENT_STREAM_ERROR,function(exception) {
-        inform(SysReadStreamEvents.Error(new String(exception)));
+        emit(SysReadStreamEvents.Error(new String(exception)));
       });
     _readStream.addListener(NodeC.EVENT_STREAM_CLOSE,function() {
-        inform(SysReadStreamEvents.Close);
+        emit(SysReadStreamEvents.Close);
       });
   }
 
@@ -54,6 +54,10 @@ class ReadStreamImpl extends acl.Event<SysReadStreamEvents> implements SysReadSt
 
   public function getNodeReadStream() {
     return _readStream;
+  }
+
+  public static function createReadStream(path:String,?options:ReadStreamOpt) {
+    return new ReadStreamImpl(Node.fs.createReadStream(path,options));
   }
   
 }

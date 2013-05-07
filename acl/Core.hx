@@ -48,11 +48,11 @@ class Core {
 	static var errorEvents = new Event<Dynamic>();
 	
 	public static function err(e:Dynamic) {
-		errorEvents.inform(e);
+		errorEvents.emit(e);
 	}
 	
 	public static function errListener(fn:Dynamic->Void) {
-		errorEvents.await(fn);
+		errorEvents.on(fn);
 	}
 	
 	public static function makeApply(o:Dynamic,method:String):Dynamic {

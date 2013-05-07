@@ -18,16 +18,16 @@ class WriteStreamImpl extends acl.Event<SysWriteStreamEvents> implements SysWrit
     _writeStream = s;
     
     _writeStream.addListener(NodeC.EVENT_STREAM_DRAIN,function() {
-        inform(Drain);
+        emit(Drain);
       });
     _writeStream.addListener(NodeC.EVENT_STREAM_ERROR,function(ex) {
-        inform(SysWriteStreamEvents.Error(new String(ex)));
+        emit(SysWriteStreamEvents.Error(new String(ex)));
       });
     _writeStream.addListener(NodeC.EVENT_STREAM_CLOSE,function() {
-        inform(SysWriteStreamEvents.Close);
+        emit(SysWriteStreamEvents.Close);
       });
     _writeStream.addListener(NodeC.EVENT_STREAM_PIPE,function(src) {
-        inform(Pipe(new ReadStreamImpl(src)));
+        emit(Pipe(new ReadStreamImpl(src)));
       });
     
   }

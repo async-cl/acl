@@ -32,7 +32,7 @@ class ChildProcessImpl extends Event<SysChildProcessEvents> implements SysChildP
     _stderr = new ReadStreamImpl(cp.stderr);
 
     _childProc.addListener(NodeC.EVENT_PROCESS_EXIT,function(code,sig) {
-        inform(Exit(code,sig));
+        emit(Exit(code,sig));
       });
 
   }
