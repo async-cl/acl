@@ -50,6 +50,10 @@ class Core {
 	public static function err(e:Dynamic) {
 		errorEvents.emit(e);
 	}
+
+	public static inline function copy(obj:Dynamic) {
+		return haxe.Json.parse(haxe.Json.stringify(obj));
+	}	
 	
 	public static function errListener(fn:Dynamic->Void) {
 		errorEvents.on(fn);
