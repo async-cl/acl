@@ -145,7 +145,7 @@ class Http {
 		return oc;
 	}
 	
-	public static function fileUpload<T>(form, action_url):TOutcome<String,T> {
+	public static function fileUploadFrame<T>(form, action_url):TOutcome<String,T> {
 		var oc = Core.outcome();
         trace('creating iframe');
         var iframe = Browser.document.createElement("iframe");
@@ -204,7 +204,59 @@ class Http {
         form.submit();
         return oc;
 	}
+
+    /**
+    	Upload a single file using Xhr. Optional data object may be supplied.
+    */
+	public static function fileUpload(url:String,fileName:String,file:Dynamic,?data:Dynamic):TOutcome<String,String> {
+		var oc = Core.outcome();
+		var fd = new js.html.DOMFormData();
+        var xhr = new js.html.XMLHttpRequest();
+        
+        
+        if (fileName != null && file != null) {
+		    fd.append(fileName,file,null);
+        }
+
+		if (data) {
+		    for (f in Reflect.fields(data)) {
+		    	var d = Reflect.field(data,f);
+		    	if (f == "_attachments") {
+		    		d = haxe.Json.stringify(d);
+                }
+		    		
+                fd.append(f,d,null);
+            }
+		}
+        
+        function complete(e) {
+        	oc.complete(Success(xhr.responseText));
+        }
+
+        function error(e) {
+        	oc.complete(Failure("upload failure"));
+        }
+        
+        function abort(e) {
+            trace('abort');
+        }
+		
+		xhr.addEventListener("load", complete, false);
+		xhr.addEventListener("error",error , false);
+		xhr.addEventListener("abort", abort, false);
+		xhr.open("POST",url);
+		xhr.send(fd);
+		
+		return oc;
+	}
 	
+	public static function fileUpload_<T>(url:String,fileName:String,file:Dynamic,?data:Dynamic):TOutcome<String,T> {
+		return fileUpload(url,fileName,file,data).fmap(function(data) {
+            var oc = Core.outcome();
+            oc.complete(unpack(data));
+			return oc;
+		});
+	}
 
 #end
 
