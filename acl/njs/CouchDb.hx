@@ -174,12 +174,16 @@ class CouchDb {
 		return oc;
 	}
 	
+	public static inline function replyToIDRev(reply:TReply) {
+		return {id:reply.body.id,rev:reply.body.rev};
+	}
+	
 	/**
 		Do an insert but just return the id,rev of the newly inserted object.
 	*/
 	public static function insert_(db:TCouchDb,obj:Dynamic,?id:String):TOutcome<String,TCouchIDRev> {
 		return insert(db,obj,id).map(Validations.flatMap._2(function(reply:TReply) {
-            return Success({id:reply.body.id,rev:reply.body.rev});
+            return Success(replyToIDRev(reply));
         }));
 	}
 	
