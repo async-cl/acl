@@ -10,12 +10,20 @@ import JQuery;
 using scuts.core.Arrays;
 import JQuery;
 
-import jQuery.plugins.jQueryTools.Tabs;
-import jQuery.plugins.jQueryTools.Overlay;
 import jQuery.plugins.jQueryTools.Validator;
 
 typedef TJq = JQuery;
 typedef TJqEvent = JQuery.JQueryEvent;
+typedef TJqTabs = jQuery.plugins.jQueryTools.Tabs;
+typedef TJqOverlay = jQuery.plugins.jQueryTools.Overlay;
+typedef TJqValidator = Validator;
+typedef TJqValidatorApi = ValidatorAPI;
+
+
+typedef TJqFileUpload = { > TJq,
+	function fileupload(options:Dynamic):TJq;
+}
+
 enum EMixedRefs {
 	S(selector:String); //self named
 	N(name:String,selector:String); // explicitly named
@@ -25,12 +33,28 @@ class J {
 	
 	public static var _= JQuery._static;
 	
-	public static var cur(get, null) : JQuery;
+	public static var cur(get, null) : TJq;
 
+	public static var div(get,null):TJq;
+	public static var span(get,null):TJq;
+
+	public static inline function id(id:String) {
+		return J.q('#'+id);
+	}
+		
 	private static inline function get_cur() : JQuery {
 		return untyped __js__("$(this)");
 	}
 
+	private static inline function get_div() : JQuery {
+		return J.q('<div></div>');
+	}
+
+	private static inline function get_span() : JQuery {
+		return J.q('<span></span>');
+	}
+
+	
 	public static function q(x:Dynamic,?ctx:TJq):TJq {
 		return new JQuery(x,ctx);
 	}
@@ -46,6 +70,7 @@ class J {
 		return valid;
 	}
 	
+    
 	/**
 		Make an object with names from the given array and populate it with TJq instances
 		of the corresponding IDs from the page.
@@ -76,7 +101,7 @@ class J {
 		});
 	}
 	
-	public static function validator(jq:TJq,?options:Dynamic):ValidatorAPI {	
+	public static function validator(jq:TJq,?options:Dynamic):TJqValidatorApi {	
 		var v = Validator.validator(jq,options);
         return Validator.getValidatorAPI(v);
 	}

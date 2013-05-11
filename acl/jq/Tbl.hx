@@ -17,25 +17,11 @@ using scuts.core.Functions;
 using acl.Core;
 using acl.J;
 
-enum ETblField {
-    Raw;
-    HF(header:String->String,formatter:Dynamic->String);
-    TF(header:String,formatter:Dynamic->String);
-    F(formatter:Dynamic->String);
-    H(header:String->String);
-    T(header:String);
-}
-
-typedef TblOptions = {
-    ?fields:Dynamic,
-    ?idField:String,
-    ?calculated:Dynamic
-};
+using acl.jq.RecordMapper;
 
 typedef TTbl = {
 	_table:TJq,
-    _options:TblOptions,
-	_fields:Array<String>,
+	_recordMapper:TRecordMapper,
 	?_selectedClass:String,
 	?_overClass:String,
 }
@@ -66,43 +52,11 @@ class Tbl {
         var idstr = if (idField != null) 'id="${id}"' else "";
         return '<tr ${idstr}>';
     }
-   
-    static function createRow(rec:Dynamic,options:TblOptions,allFields:Array<String>) {
-        if (options.calculated != null) {
-            Reflect.fields(options.calculated).foldLeft(rec,function(acc,calcName) {
-                Reflect.setField(acc,calcName,Reflect.field(options.calculated,calcName)(rec));
-                    allFields.push(calcName);
-                    return acc;
-                });
-        }
-        var fieldModifiers = options.fields;
-        
-        return allFields.foldLeft({},function(acc,mf) {
-                var val = Reflect.field(rec,mf);
-                var z:ETblField = Reflect.field(fieldModifiers,mf);
-                if (z != null) {
-                    Reflect.setField(acc,mf,switch(z) {
-                        case H(h):Pair.create(h(mf),val);
-                        case F(f):Pair.create(mf,f(val));
-                        case HF(h,f):Pair.create(h(mf),f(val));
-                        case TF(h,f):Pair.create(h,f(val));
-                        case Raw : Pair.create(mf,val);
-                        case T(s): Pair.create(s,val);
-                    });
-                } else
-                    Reflect.setField(acc,mf,Pair.create(mf,val));
-                    
-                return acc;
-            });
-    }
       
-    public static function create<T,F>(parent:TJq,ps:Array<T>,options:TblOptions):TTbl {
+    public static function create<T,F>(parent:TJq,ps:Array<T>,options:RMOptions):TTbl {
         var allFields = Reflect.fields(ps[0]);
-        
-        var modified = ps.map(function(rec) {
-            return createRow(rec,options,allFields);
-        });
-
+        var recordMapper = RecordMapper.create(options);
+        var modified = recordMapper.map(ps);
         var requiredFieldsInOrder = Reflect.fields(options.fields);
         return {
         	_table:J.q('<table class="aclTbl">' + 
@@ -113,8 +67,7 @@ class Tbl {
                 }).join("") +
                 "</tbody>" +
                 '</table>').appendTo(parent),
-            _fields:requiredFieldsInOrder,
-            _options:options
+            _recordMapper:recordMapper
         };
     }
 
@@ -161,7 +114,7 @@ class Tbl {
     
     public static function updateRow<T>(table:TTbl,id:String,values:Dynamic) {
 		var row = J.q('tbody tr[id="${id}"]',table._table);
-		table._fields.each(function(f) {
+		table._recordMapper.allFields.each(function(f) {
             var newValue = Reflect.field(values,f);
             if (newValue != null) {
                 trace('updating ${f} to ${newValue}');
@@ -176,8 +129,8 @@ class Tbl {
     }
     
     public static function appendRow<T>(table:TTbl,record:Dynamic) {
-        var rec = createRow(record,table._options,Reflect.fields(record));
-        J.q('tbody',table._table).append(makeTr(rec,table._options.idField) + makeTd(rec,table._fields) + "</tr>");
+        var rec = table._recordMapper.apply(record);
+        J.q('tbody',table._table).append(makeTr(rec,table._recordMapper.idField) + makeTd(rec,table._recordMapper.allFields) + "</tr>");
         _addSelection(table);
         return table;
     }
