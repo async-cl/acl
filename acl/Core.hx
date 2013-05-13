@@ -24,16 +24,19 @@ enum TRHashReply {
  	HUpdated;
  }
 
-typedef  TCouchObj = {
-	?_id:String,
-	?_rev:String,
-	?docType:String
-};
+@:coreType abstract TEntityID from String  to String { }
+@:coreType abstract TEntityRev from String { }
 
-typedef TCouchIDRev = {
-	id:String,
-	rev:String
-};
+
+typedef TEntityRef = {
+	?_id:TEntityID,
+	?_rev:TEntityRev
+}
+
+typedef TEntity = { > TEntityRef,
+	docType:String
+}
+
 
 typedef TRelation = {
  	name:String
@@ -65,18 +68,21 @@ class Core {
 		}
 	}
 	
-	public static function promise<T>():TPromise<T> {
+	public static inline function promise<T>():TPromise<T> {
 		return new TPromise<T>();
 	}
 	
-	public static function event<T>():TEvent<T> {
+	public static inline function event<T>():TEvent<T> {
 		return new acl.Event<T>();
 	}
 	
-	public static function outcome<F,S>():TOutcome<F,S> {
+	public static inline function outcome<F,S>():TOutcome<F,S> {
 		return new TPromise<TVal<F,S>>();
 	}	
 	
+	public static inline function entityRef(entity:TEntity) {
+		return {_id:entity._id,_rev:entity._rev};
+	}
 	public static function failure<F,S>(?f:F):TOutcome<F,S> {
 		var oc = new TPromise<TVal<F,S>>();
 		oc.complete(Failure(f));

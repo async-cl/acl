@@ -24,29 +24,29 @@ class Relations {
 		db = tdb;
 	}
 	
-	public static function create(name):TRelation {
+	public static function create(name:String):TRelation {
 		return {
 			name:name
 		};
 	}
 	
-	public static function link(r:TRelation,parentID:String,childID:String):TOutcome<String,TCouchIDRev> {
+	public static function link(r:TRelation,parentID:TEntityID,childID:TEntityID):TOutcome<String,TEntityRef> {
 		A.ok(childID,"childID must be set");		
 		return db.insert_({id1:parentID,id2:childID,rel:r.name,docType:"relation"});
 	}
 	
-	public static function linkWithInsert(r:TRelation,parentID:String,child:TCouchObj):TOutcome<String,TCouchIDRev> {
+	public static function linkWithInsert(r:TRelation,parentID:TEntityID,child:TEntity):TOutcome<String,TEntityRef> {
 		//first insert the child object ...
 		return db.insert_(child).fmap(function(childIDRev) {
 			// then relate the child to the parent
-			return link(r,parentID,childIDRev.id);
+			return link(r,parentID,childIDRev._id);
 		});
 	}
 	
 	/**
 		Remove the relation to the child object. Note, this does not delete the child, just the relation.
 	*/
-	public static function unlink(r:TRelation,parentID:String,childID:String):TOutcome<String,String> {
+	public static function unlink(r:TRelation,parentID:TEntityID,childID:TEntityID):TOutcome<String,String> {
 		var oc = Core.outcome();
 		db.view("wise","rel-child-parent",KEY([r.name,parentID,childID])).onComplete(function(v) {
 			if (v.isSuccess()) {
@@ -71,11 +71,11 @@ class Relations {
 		return oc;
 	}
 	
-	public static function linked<T>(r:TRelation,parentID:String):TOutcome<String,TReplyRows<T>> {
+	public static function linked<T>(r:TRelation,parentID:TEntityID):TOutcome<String,TReplyRows<T>> {
 		return db.view("wise","rel-parent-child",KEY([r.name,parentID]),true);
 	}
 	
-	public static function linked_<T>(r:TRelation,parentID:String):TOutcome<String,Array<T>> {
+	public static function linked_<T>(r:TRelation,parentID:TEntityID):TOutcome<String,Array<T>> {
 		return linked(r,parentID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
 			return Success(r.body.rows.map(function(row) { return row.doc;}));
 		}));

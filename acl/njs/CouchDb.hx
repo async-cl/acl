@@ -15,6 +15,10 @@ using scuts.core.Functions;
 
 using acl.Core;
 
+
+typedef TCouchIDRev = TEntityRef;
+typedef  TCouchObj = TEntity;
+
 typedef TCouchConf = {
 	server:String,
 	name:String,
@@ -174,8 +178,8 @@ class CouchDb {
 		return oc;
 	}
 	
-	public static inline function replyToIDRev(reply:TReply) {
-		return {id:reply.body.id,rev:reply.body.rev};
+	public static inline function replyToIDRev(reply:TReply):TCouchIDRev {
+		return {_id:reply.body.id,_rev:reply.body.rev};
 	}
 	
 	/**
@@ -257,10 +261,10 @@ class CouchDb {
 	}
 	
 
-		public static function putAttach(db:TCouchDb,id:String,rev:String,name:String,data:Dynamic,mimeType):TOutcome<String,TReply> {
-		var oc = new TPromise<TVal<String,TReply>>();
+	public static function attach(db:TCouchDb,id:String,rev:String,name:String,data:Dynamic,mimeType):TOutcome<String,TCouchIDRev> {
+		var oc = new TPromise<TVal<String,TCouchIDRev>>();
 		db._bucket.attachment.insert(id,name,data,mimeType,{rev:rev},function(err,body,headers) {
-			oc.complete((err != null) ? Failure(error("putAttach",err)) : Success({body:body,headers:headers}));
+			oc.complete((err != null) ? Failure(error("putAttach",err)) : Success(replyToIDRev({body:body,headers:headers})));
 		});
 		return oc;
 	}
