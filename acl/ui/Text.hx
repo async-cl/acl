@@ -1,7 +1,7 @@
-package acl.nme;
+package acl.ui;
 
-import acl.nme.Defs;
-import acl.nme.Fonts;
+using acl.Ui;
+import acl.ui.Fonts;
 using scuts.core.Strings;
 using scuts.core.Arrays;
 

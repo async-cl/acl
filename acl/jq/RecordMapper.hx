@@ -81,22 +81,22 @@ class RecordMapper {
         var fieldModifiers = rm.fields;
         
         return rm.allFields.foldLeft({},function(acc,mf) {
-                var val = Reflect.field(rec,mf);
-                var z:RMField = Reflect.field(fieldModifiers,mf);
-                if (z != null) {
-                    Reflect.setField(acc,mf,switch(z) {
-                        case H(h):Pair.create(h(mf),val);
-                        case F(f):Pair.create(mf,f(val));
-                        case HF(h,f):Pair.create(h(mf),f(val));
-                        case TF(h,f):Pair.create(h,f(val));
-                        case Raw : Pair.create(mf,val);
-                        case T(s): Pair.create(s,val);
-                    });
-                } else
-                    Reflect.setField(acc,mf,Pair.create(mf,val));
-                    
-                return acc;
-            });
+            var val = Reflect.field(rec,mf);
+            var z:RMField = Reflect.field(fieldModifiers,mf);
+            if (z != null) {
+                Reflect.setField(acc,mf,switch(z) {
+                    case H(h):Pair.create(h(mf),val);
+                    case F(f):Pair.create(mf,f(val));
+                    case HF(h,f):Pair.create(h(mf),f(val));
+                    case TF(h,f):Pair.create(h,f(val));
+                    case Raw : Pair.create(mf,val);
+                    case T(s): Pair.create(s,val);
+                });
+            } else
+                Reflect.setField(acc,mf,Pair.create(mf,val));
+                
+            return acc;
+        });
     }
     
 

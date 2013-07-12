@@ -48,12 +48,12 @@ class Relations {
 	*/
 	public static function unlink(r:TRelation,parentID:TEntityID,childID:TEntityID):TOutcome<String,String> {
 		var oc = Core.outcome();
-		db.view("wise","rel-child-parent",KEY([r.name,parentID,childID])).onComplete(function(v) {
+		db.view("wise","rel-relation",KEY([r.name,parentID,childID])).onComplete(function(v) {
 			if (v.isSuccess()) {
 				var z = v.extract();
 				if (z.body.rows.length == 1) {
-					var rel = z.body.rows[0].value;
-					db.delete(rel._id,rel._rev).onComplete(function(f) {
+					var rel:TEntityRef = z.body.rows[0].value;
+					db.delete(cast rel._id,cast rel._rev).onComplete(function(f) {
 						if (f.isSuccess()) 
 							oc.complete(Success("ok"));
 						else
@@ -75,11 +75,24 @@ class Relations {
 		return db.view("wise","rel-parent-child",KEY([r.name,parentID]),true);
 	}
 	
+	public static function inverse<T>(r:TRelation,childID:TEntityID):TOutcome<String,TReplyRows<T>> {
+		return db.view("wise","rel-child-parent",KEY([r.name,childID]),true);
+	}
+	
 	public static function linked_<T>(r:TRelation,parentID:TEntityID):TOutcome<String,Array<T>> {
 		return linked(r,parentID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
 			return Success(r.body.rows.map(function(row) { return row.doc;}));
 		}));
 	}
+	
+	public static function inverse_<T>(r:TRelation,childID:TEntityID):TOutcome<String,Array<T>> {
+		return inverse(r,childID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
+			return Success(r.body.rows.map(function(row) { return row.doc;}));
+		}));
+	}
+	
+	
+	
 
 }
 

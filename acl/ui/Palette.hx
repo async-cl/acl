@@ -1,9 +1,4 @@
-package acl.nme;
-
-import acl.nme.Defs;
-using acl.nme.Grid;
-using acl.nme.Spr;
-using acl.nme.Palette;
+package acl.ui;
 
 using scuts.core.Arrays;
 using scuts.core.Iterables;
@@ -12,7 +7,12 @@ import scuts.core.Option;
 using scuts.core.Options;
 using scuts.core.Hashs;
 
-import cl.async.Event;
+using acl.Core;
+using acl.Ui;
+using acl.ui.Grid;
+using acl.ui.Spr;
+using acl.ui.Palette;
+
 
 typedef TPaletteAttr = {
 	parent:TSprite,
@@ -97,12 +97,12 @@ class Palette {
   	}
 	
 	public static function observe(palette:TPalette,fn:TSprite->Void,?info:Dynamic):TPalette {
-		palette._notifier.await(fn,info);
+		palette._notifier.on(fn,info);
 		return palette;
 	}
 	
 	public static function notify(palette:TPalette,prm:TSprite):TPalette {
-		palette._notifier.inform(prm);
+		palette._notifier.emit(prm);
 		return palette;
 	}
 	
@@ -116,7 +116,7 @@ class Palette {
 		
 	public static function hitTest(palette:TPalette,s:TSprite):TOption<TSprite> {
 		return Spr.children(palette._grid.sprite).filterToArray(function(c) {
-			return c.getBounds(nme.Lib.stage).containsRect(s.getBounds(nme.Lib.stage));
+			return c.getBounds(s.stage).containsRect(s.getBounds(s.stage));
 		}).firstOption();
 	}
 	

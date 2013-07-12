@@ -52,6 +52,7 @@ interface SysChildProcess  {
 	var stderr(get_stderr,null):SysReadStream;
 	var pid(get_pid,null):Int;
 	function kill(signal:String):Void;
+    function on(fn:SysChildProcessEvents->Void,?info:Dynamic):Void->Void;
 }
 
 interface SysWriteStream {
@@ -70,6 +71,7 @@ interface SysReadStream {
 	function setEncoding(enc:String):Void;
 	function pipe(dest:SysWriteStream,?opts:{end:Bool}):Void;
 	function getNodeReadStream():NodeReadStream;
+    function on(fn:SysReadStreamEvents->Void,?info:Dynamic):Void->Void;
 }
 
 class Sys {
@@ -82,7 +84,7 @@ class Sys {
 	public static var path(get,null):NodePath ;
 	public static var dirname(get,null):String ;
 
-	public static var Assert(get,null):NodeAssert;
+	public static var Assert(get,null):SysAssert;
 
 	public static function captureSystemEvents(fn:SysEvents->Void) {
 		if (_events == null) {
@@ -92,6 +94,7 @@ class Sys {
 		        _events.emit(ProcessExit);
 		      });
 
+            
 		    Node.process.addListener(NodeC.EVENT_PROCESS_UNCAUGHTEXCEPTION,function(ex) {
 		        _events.emit(ProcessUncaughtException(ex));
 		    });
@@ -142,14 +145,14 @@ class Sys {
 	    return Node.crypto.createHash('md5').update(val).digest("hex");
 	}
 
-	public static inline function stdout():SysWriteStream {
-		return new WriteStreamImpl(_proc.stdout);
-	}
-
-	public static inline function stdin():SysReadStream {
+    public static inline function stdin():SysReadStream {
 		return new ReadStreamImpl(_proc.stdin);
 	}
 
+	public static inline function stdout():SysWriteStream {
+		return new WriteStreamImpl(_proc.stdout);
+	}
+    
 	public static inline function stderr():SysWriteStream {
 		return new WriteStreamImpl(_proc.stderr);
 	}
@@ -192,7 +195,7 @@ class Sys {
 
 	public static function exists(path:String):TOutcome<String,String> {
 		var oc = Core.outcome();
-		Node.path.exists(path,function(exists) {
+		Node.fs.exists(path,function(exists) {
 		    oc.complete((exists) ? Success(path) : Failure(path));
 		  });
 		return oc;
@@ -357,7 +360,6 @@ class Sys {
 		  });
 		return prm;
 	}
-
 
 	public static function readFile(path:String,?enc:SysEnc):TOutcome<String,Dynamic>{
 		var oc = Core.outcome();

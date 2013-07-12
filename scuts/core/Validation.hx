@@ -6,5 +6,5 @@ enum Validation < F, S > {
   Success(s:S);
 }
 
-@:coreType abstract FailProjection<F,S> {}
+//@:coreType abstract FailProjection<F,S> {}
 

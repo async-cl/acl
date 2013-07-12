@@ -245,7 +245,7 @@ class Validations
     case Success(s): Success(s);
   }
   
-  public static inline function fail <A,B>(v:VD<A,B>):FailProjection<A,B> return cast v;
+  //public static inline function fail <A,B>(v:VD<A,B>):FailProjection<A,B> return cast v;
   
   static function zipVal2 <F,S1,S2>(s1:S1, v2:VD<F,S2>):VD<F,Tup2<S1,S2>> return switch v2
   {
@@ -298,7 +298,7 @@ class Validations
   }
 }
 
-
+/*
 private typedef FP<F,S> = FailProjection<F,S>;
 
 class FailProjectionExt 
@@ -346,6 +346,7 @@ class FailProjectionExt
   }
 }
 
+*/
 class ValidationFromEither
 {
   public static function validation<L,R>(e:Either<L,R>):VD<L,R> return switch (e) 

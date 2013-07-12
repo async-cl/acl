@@ -1,12 +1,26 @@
-package acl.nme;
-
-import acl.nme.Defs;
+package acl;
 
 /**
- * ...
+ * Top level ui definitions for OpenFlash
  * @author ritchie
  */
-class U {
+
+typedef TMouseEvent = flash.events.MouseEvent;
+typedef TAssets = openfl.Assets;
+typedef TFont =  flash.text.Font;
+typedef TFormat = flash.text.TextFormat;
+typedef TFEvent = flash.events.Event;
+typedef TField = flash.text.TextField;
+typedef TDisplayObj = flash.display.DisplayObject;
+typedef TSprite = flash.display.Sprite;
+typedef TBitmap = flash.display.Bitmap;
+typedef TSound = flash.media.Sound;
+typedef TGraphics = flash.display.Graphics;
+typedef TDim = {width:Int,height:Int};
+typedef TText = TSprite;
+
+
+class Ui {
 	public static function inf(s:TSprite) {
 		trace('${s.name} -> dims (${s.x},${s.y},${s.width},${s.height}) - scale (${s.scaleX},${s.scaleY})');
 	}	

@@ -59,14 +59,13 @@ class ChildProcessImpl extends Event<SysChildProcessEvents> implements SysChildP
 
   public static function spawn(command: String,args: Array<String>,?options: Dynamic ) : TOutcome<String,SysChildProcess> {
     var oc = Core.outcome();
-    var forTyper:SysChildProcess = new ChildProcessImpl(Node.childProcess.spawn(command,args,options));
+    var forTyper:SysChildProcess =  new ChildProcessImpl(Node.childProcess.spawn(command,args,options));
     oc.complete(Success(forTyper));
     return oc;
   }
 
   public static function exec(command: String,?options:Dynamic,?cb: SysChildProcess->Void):TOutcome<SysChildExit,String> {
-    var
-      oc = Core.outcome(),
+      var oc = Core.outcome(),
       child = Node.childProcess.exec(command,options,function(err,so,se) {
         if (err != null) {
               oc.complete((Failure({code:err.code,stderr:new String(se)})));
@@ -83,8 +82,7 @@ class ChildProcessImpl extends Event<SysChildProcessEvents> implements SysChildP
 
 
   public static function execFile(command: String,?options:Dynamic,?cb: SysChildProcess->Void):TOutcome<SysChildExit,String> {
-    var
-      oc = Core.outcome(),
+      var oc = Core.outcome(),
       child = Node.childProcess.execFile(command,options,function(err,so,se) {
           if (err != null) {
               oc.complete(Failure({code:err.code,stderr:new String(se)}));

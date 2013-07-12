@@ -13,7 +13,6 @@ typedef TVal<F,S> = scuts.core.Validation<F,S>
 typedef TOutcome<F,S> = TPromise<TVal<F,S>>;
 typedef TOption<T> = scuts.core.Option<T>;
 
-
 typedef TChain<F,S,D> = {
 	prm:TOutcome<F,S>,
 	data:D
@@ -28,8 +27,11 @@ enum TRHashReply {
 @:coreType abstract TEntityRev from String { }
 
 
-typedef TEntityRef = {
-	?_id:TEntityID,
+typedef TEntityBase = {
+	?_id:TEntityID
+}
+
+typedef TEntityRef = { > TEntityBase,
 	?_rev:TEntityRev
 }
 
@@ -37,6 +39,10 @@ typedef TEntity = { > TEntityRef,
 	docType:String
 }
 
+enum TEntityKeys {
+	KEY(params:Dynamic);
+	KEYS(params:Array<Dynamic>);
+}
 
 typedef TRelation = {
  	name:String
@@ -112,7 +118,7 @@ class Core {
 			return if (v.isSuccess()) Success(fn(v.extract())) else Failure(v.extractFailure());
 		});
 	}
-	
+
 	public static function onSuccess<F,S,T>(p:TOutcome<F,S>,fn:S->Void,?fail:F->Void) {
 		p.onComplete(function(v) {
 			if (v.isSuccess())
@@ -217,7 +223,8 @@ class Core {
 	}
 	
 	/**
-		Call the given function only after any other calls to the same function have completed in sequence.
+		Call the given function only after any other calls to the same function have completed
+        in sequence.
 	*/
 	public static function serializeCall<F,S>(fn:Void->TOutcome<F,S>) {
 		var Q:Array<TOutcome<F,S>> = [];

@@ -1,14 +1,16 @@
-package acl.nme;
+package acl.ui;
 
 /**
  * ...
  * @author ritchie
  */
- 
-import acl.nme.Defs;
+
 import scuts.core.Option;
 using scuts.core.Options;
 using scuts.core.Strings;
+
+using acl.Core;
+using acl.Ui;
 
 class Spr {
 
@@ -75,11 +77,11 @@ class Spr {
 	
 	public static function fromUrl(url:String):TPromise<TSprite> {
 		var p = new TPromise<TSprite>();
-		var r =new nme.net.URLRequest(url);
-		var l = new nme.display.Loader();
+		var r =new flash.net.URLRequest(url);
+		var l = new flash.display.Loader();
 		l.load(r);
 		
-		l.contentLoaderInfo.addEventListener(TEvent.COMPLETE,function(r) {
+		l.contentLoaderInfo.addEventListener(TFEvent.COMPLETE,function(r) {
 			var s = new TSprite();
 			s.addChild(l);
 			p.complete(s);
@@ -111,7 +113,7 @@ class Spr {
 		return m;
 	}
 	
-	public static var mapFromDir:String->Array<String>->Map<String,TSprite> = U.memoize(memSpr);
+	public static var mapFromDir:String->Array<String>->Map<String,TSprite> = Ui.memoize(memSpr);
 	
 	public static function children(s:TSprite):Iterable<TSprite> {		
 		return {
@@ -152,7 +154,7 @@ class Spr {
 	}
 	
 	public static function toBitmap(sprite:TSprite, smoothing:Bool = false):TBitmap {
-		var bitmapData = new nme.display.BitmapData(Math.ceil(sprite.width), Math.ceil(sprite.height), true, 0);
+		var bitmapData = new flash.display.BitmapData(Math.ceil(sprite.width), Math.ceil(sprite.height), true, 0);
 		bitmapData.draw(sprite);
 		return new TBitmap(bitmapData, null, smoothing);
 	}

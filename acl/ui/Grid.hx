@@ -1,6 +1,6 @@
-package acl.nme;
-import acl.nme.Defs;
-using acl.nme.Spr;
+package acl.ui;
+using acl.Ui;
+using acl.ui.Spr;
 
 typedef TGridAttr = { 
 	rows:Int,

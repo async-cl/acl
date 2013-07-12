@@ -37,11 +37,6 @@ typedef TCouchDb = {
 	_bucket:Dynamic
 }
 
-enum TCouchKeys {
-	KEY(params:Dynamic);
-	KEYS(params:Array<Dynamic>);
-}
-
 typedef TCouchHeaders = {
 	location:String,
 	date:String,
@@ -171,6 +166,12 @@ class CouchDb {
 	}
 	
 	public static function insert(db:TCouchDb,obj:Dynamic,?id:String):TOutcome<String,TReply> {
+		var att = Reflect.field(obj,"_attachments");
+		if (att != null && Std.is(att,String)) {
+			trace("converting _attachments to object before insertion");
+			Reflect.setField(obj,"_attachments",haxe.Json.parse(att));
+		}
+	
 		var oc = new TPromise<TVal<String,TReply>>();
 		db._bucket.insert(obj,id,function(e,body,headers) {
 			oc.complete((e != null) ? Failure(error("insert",e)) : Success({body:body,headers:headers}));
@@ -269,7 +270,7 @@ class CouchDb {
 		return oc;
 	}
 	
-	public static function view<T>(db:TCouchDb,design:String,view:String,?params:TCouchKeys,includeDocs=false):TOutcome<String,TReplyRows<T>> {
+	public static function view<T>(db:TCouchDb,design:String,view:String,?params:TEntityKeys,includeDocs=false):TOutcome<String,TReplyRows<T>> {
 		var oc = new TPromise<TVal<String,TReplyRows<T>>>();
 	
 		var p:Dynamic = if (params == null) {} else switch(params) {
@@ -287,7 +288,7 @@ class CouchDb {
 		return oc;
 	}
 
-	public static function view_<T>(db:TCouchDb,design:String,viewName:String,?params:TCouchKeys,includeDocs=false):TOutcome<String,Array<T>> {
+	public static function view_<T>(db:TCouchDb,design:String,viewName:String,?params:TEntityKeys,includeDocs=false):TOutcome<String,Array<T>> {
 		return 
 			view(db,design,viewName,params,includeDocs)
 			.map(Validations.flatMap._2(function(rr:TReplyRows<T>) { 

@@ -1,17 +1,16 @@
-package acl.nme;
+package acl.ui;
 
 /**
  * ...
  * @author ritchie
  */
 
-import acl.nme.Defs;
-using acl.nme.U;
-import acl.nme.Fonts;
-using acl.nme.Grid;
-using acl.nme.Spr;
-using acl.nme.Palette;
-using acl.nme.Text;
+using acl.Ui;
+import acl.ui.Fonts;
+using acl.ui.Grid;
+using acl.ui.Spr;
+using acl.ui.Palette;
+using acl.ui.Text;
 
 typedef TWordPanelAttr = {
 	width:Float,
@@ -63,7 +62,7 @@ class WordPanel {
 	}
 	
 	public static function clear(wp:TWordPanel) {
-		U.removeChildren(wp.sprite);
+		Ui.removeChildren(wp.sprite);
 		wp.curX = 0;
 		wp.curY = 0;
 		wp.line = 0;
@@ -79,7 +78,7 @@ class WordPanel {
 		}
 		
 		wp.sprite.addChild(text);
-		wp.event.inform(Append(text));
+		wp.event.emit(Append(text));
 		text.x = wp.curX;
 		text.y = wp.curY;
 		wp.curX += text.width +12;

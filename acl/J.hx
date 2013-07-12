@@ -6,7 +6,6 @@ package acl;
  */
  
 using acl.Core;
-import JQuery;
 using scuts.core.Arrays;
 import JQuery;
 
@@ -106,4 +105,7 @@ class J {
         return Validator.getValidatorAPI(v);
 	}
 
+    public static function getCookie(name) {
+        return untyped __js__('$.cookie(name)');
+    }
 }

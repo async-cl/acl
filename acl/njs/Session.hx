@@ -2,6 +2,7 @@ package acl.njs;
 
 using acl.Core;
 using scuts.core.Promises;
+import scuts.core.Pair;
 import js.Node;
 using acl.njs.RHash;
 
@@ -14,6 +15,11 @@ using acl.njs.RHash;
  	hash:TRHash<T>
  }
  
+ 
+@:coreType abstract TSessionID from String { }
+
+typedef TSessionInfo<T> = Pair<TSessionID,T>;
+
 class Session {
 
 	static var uuid:Dynamic;
@@ -26,23 +32,24 @@ class Session {
 		return oc;
 	}
 	
-	public static function create<T>(sess:TSession<T>,o:T):TOutcome<String,String> {
-		var sID = uuid.v1();
+	public static function create<T>(sess:TSession<T>,o:T):TOutcome<String,TSessionID> {
+		var sID:String = uuid.v1();
 		return sess.hash.set(sID,o).map_(function(reply) {
-			return sID;
+			return cast sID;
 		});
 	}
 	
-	public static function update<T>(sess:TSession<T>,sID:String,o:T) {
-		return sess.hash.set(sID,o);
+	public static function update<T>(sess:TSession<T>,sID:TSessionID,o:T) {
+		return sess.hash.set(cast sID,o);
 	}
 	
-	public static function get<T>(sess:TSession<T>,sID):TOutcome<String,TOption<T>> {
-		return sess.hash.get(sID);
+	public static function get<T>(sess:TSession<T>,sID:TSessionID):TOutcome<String,TOption<T>> {
+		return sess.hash.get(cast sID);
 	}
 	
-	public static function del<T>(sess:TSession<T>,sID:String) {
-		return sess.hash.remove(sID);
+	public static function del<T>(sess:TSession<T>,sID:TSessionID) {
+		var s = cast sID;
+		return sess.hash.remove(cast sID);
 	}
 		
 }

@@ -1,9 +1,9 @@
-package acl.nme;
-import acl.nme.Defs;
+package acl.ui;
+using acl.Ui;
 
-import nme.net.URLRequest;
-import nme.net.URLLoader;
-import nme.net.URLLoaderDataFormat;
+import ofl.net.URLRequest;
+import ofl.net.URLLoader;
+import ofl.net.URLLoaderDataFormat;
 
 
 //import scuts.Scuts;

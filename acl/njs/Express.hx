@@ -10,18 +10,23 @@ using scuts.core.Strings;
  * @author ritchie
  */
 
+typedef TExpress = {
+    @:overload(function(path:String,middleware:Dynamic):Void {})
+    function use(middleware:Dynamic):Void;
+    function locals(obj:Dynamic):Void;
+    function set(name:String,obj:Dynamic):Void;
+    @:overload(function(name:String):Dynamic {})
+    function get(url:String,fn:TExpressReq->TExpressResp->Void):Void;
+    function post(url:String,fn:TExpressReq->TExpressResp->Void):Void;
+    function put(url:String,fn:TExpressReq->TExpressResp->Void):Void;
+};
+
+
 typedef TExpressServerAttrs = {
 	host:String,
 	port:Int,
 	?serverName:String
 };
-
-typedef TExpressServer = { > TExpressServerAttrs,
-	_app:TExpressApp,
-	_creds:Dynamic,
-	_server:NodeHttpServer,
-};
-
 
 typedef TExpressFile = {
 	size:Int,
@@ -93,22 +98,11 @@ typedef TExpressResp = {
 	function render(view:String,locals:Dynamic,?fn:String->String):Void;
 }
 
-typedef TExpressApp = {
-	function use(?mountpoint:String,d:Dynamic):Void;
-	function get(url:String,?handler:TExpressReq->TExpressResp->Void):Dynamic;
-	function post(url:String,handler:TExpressReq->TExpressResp->Void):Void;
-	function put(url:String,handler:TExpressReq->TExpressResp->Void):Void;
-	function set(url:String,val:Dynamic):Void;
-	var locals:Dynamic;
-	function configure(fn:Void->Void):Void;
-}
-
-
 class Express {
 
 	static var express:Dynamic;
 
-	public static function module() {
+	public static function module():Dynamic {
 		if (express == null)
 			express = Node.require("express");
 			
@@ -122,72 +116,11 @@ class Express {
 		return untyped __js__("acl.njs.Express.express.static(s)");
 	}
 
-	public static function create(attrs:TExpressServerAttrs):TExpressServer {
-		if (express == null)
-			express = Node.require("express");
+    
+    public static function create():TExpress {
+        module();
+        return untyped __js__("acl.njs.Express.express()");
+        
+    }
 		
-		return {
-			_app: untyped __js__("acl.njs.Express.express()"),
-			host:attrs.host,
-			port:attrs.port,
-			_creds:null,
-			_server:null,
-			serverName:(attrs.serverName == null) ? "Acl HttpServer" : attrs.serverName
-		};
-	}
-	
-	public static function start(srv:TExpressServer):TOutcome<String,TExpressServer> {
-		var oc = Core.outcome();
-		srv._app.set("port",srv.port);
-		srv._server = Node.http.createServer(cast srv._app);
-		srv._server.listen(cast srv._app.get('port'),function() {
-			trace(srv.serverName + " "+ srv._app.get('port'));
-			oc.complete(Success(srv));
-		});
-	    return oc;
-	}
-	
-	public static function get(srv:TExpressServer,url:String,fn:TExpressReq->TExpressResp->Void):TExpressServer {
-		srv._app.get(url,fn);
-		return srv;
-	}
-	
-	public static function post(srv:TExpressServer,url:String,fn:TExpressReq->TExpressResp->Void):TExpressServer {
-		srv._app.post(url,fn);
-		return srv;
-	}
-
-	public static function put(srv:TExpressServer,url:String,fn:TExpressReq->TExpressResp->Void):TExpressServer {
-		srv._app.put(url,fn);
-		return srv;
-	}
-
-	public static function use(srv:TExpressServer,f:Dynamic,?s:Dynamic) {
-		srv._app.use(f,s);
-	}	
-
-	public static function set(srv:TExpressServer,k:String,v:Dynamic) {
-		srv._app.set(k,v);
-	}
-
-	public static function configure(srv:TExpressServer,fn:Void->Void) {
-		srv._app.configure(fn);
-	}
-	
-	public static function locals(srv:TExpressServer,l:Dynamic) {
-		srv._app.locals = l;
-	}
-	
-	public static function onCompletedReply<F,S>(oc:TOutcome<F,S>,res:TExpressResp) {
-		oc.onComplete(function(v) {
-			validationReply(v,res);
-			return null;
-		});
-	}
-	
-	public static inline function validationReply<F,S>(v:TVal<F,S>,res:TExpressResp) {
-		res.send(200,haxe.Serializer.run(v));
-	}
-	
-	
 }

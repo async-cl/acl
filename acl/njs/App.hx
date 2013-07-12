@@ -1,0 +1,145 @@
+package acl.njs;
+
+/**
+ * ...
+ * @author ritchie
+ */
+using scuts.core.Validations;
+using scuts.core.Options;
+import scuts.core.Pair;
+
+using acl.Core;
+using acl.njs.CouchDb;
+using acl.njs.Entity;
+using acl.njs.entity.ApiEntity;
+using acl.njs.Express;
+using acl.njs.ExpressApp;
+using acl.njs.Session;
+using acl.njs.Sys;
+using acl.njs.Relations;
+import acl.njs.RHash;
+
+typedef TConfig = {
+	client_js:String,
+	activity_center:String,
+	db:TCouchConf,
+	httpHost:String,
+	httpPort:Int
+};  
+
+   
+typedef TApp<T> = {
+	db:TCouchDb,
+	express:TExpressApp,
+	config:TConfig,
+	session:TSession<T>
+};
+
+class App {
+
+	static var passwordCreator:Dynamic;
+	static var session:TSession<Dynamic>;
+	
+	public static function init<T>():TOutcome<String,TApp<T>> {
+	
+		passwordCreator = js.Node.require('password-generator');
+		
+		return initBase()
+		.linkD(function(db,app:TApp<T>) {
+			app.db= db;
+			trace("init session");
+			return Session.init();
+		})
+		.linkD(function(sess,app:TApp<T>) {
+			app.session = sess;
+			session = sess;
+			trace("init Express");
+			return initExpress(app.config);
+		}).finalData(function(express,app:TApp<T>) {
+			app.express = express;
+			RHash.init();
+			moduleInit(app.db);
+			routeInit(app);
+		});
+	}
+	
+	public static function moduleInit(db:TCouchDb) {
+		Entity.init(db);
+		Relations.init(db);
+	}
+		
+	public static function routeInit<T>(app:TApp<T>) {
+        ApiEntity.addRoutes(app);
+	}
+	
+	public static function post<T>(app:TApp<T>,url:String,fn:TExpressReq->TExpressResp->Void) {
+		app.express.post(url,fn);
+	}
+	
+	public static function get<T>(app:TApp<T>,url:String,fn:TExpressReq->TExpressResp->Void) {
+		app.express.get(url,fn);
+	}
+	
+	public static function initBase<T>() {
+		return Core.chain()
+		.link(function(d) {
+			trace("reading config");
+			return Sys.readFile(Sys.argv()[2]);
+		})
+		.linkD(function(config,data:TApp<T>) {
+			data.config = cast haxe.Json.parse(config);
+			trace("init CouchDb");
+			trace("Config is "+data.config);
+			return initDb(data.config);
+		});
+	}
+	
+	public static function checkSession<T>(req:TExpressReq):TChain<String,TSessionInfo<T>,Dynamic> {
+		var sID:TSessionID = App.getsID(req);
+		return Core.chain()
+		.link(function(d) {
+			return Session.get(session,sID);
+		}).link(function(sub:TOption<T>) {
+
+			return (sub.isSome())? Core.success(Pair.create(sID,sub.extract())) : Core.failure("No session");
+		});
+	}
+	
+	static function initDb(cnf:TConfig):TOutcome<String,TCouchDb> {
+		return Core.chain()
+		.link(function(dummy) {
+			return CouchDb.connect(cnf.db.server,cnf.db.user,cnf.db.password);
+		}).linkD(function(connection,data) {
+			return connection.use(cnf.db.name);
+		}).dechain();
+	}
+		
+		
+	static function initExpress(config:TConfig) {
+        return ExpressApp.create()
+            .addStatic('Public')
+            .addJade('Jade')
+            .addStylus('Stylus','Public/css')
+            .addMount('/_js',config.client_js)
+            .addCookies('ritchie','caan')
+            .serve(config.httpPort);
+	}
+	
+	public static function getsID(req:TExpressReq):TSessionID {
+		#if TEST
+			return js.Node.fs.readFileSync("cmd_session.txt");
+		#else
+    	var sc = req.signedCookies;
+    	var caan = Reflect.field(sc,"caan");
+    	if (caan != null) {
+        	return Reflect.field(caan,"sID");
+        }
+        return null;
+        #end
+    }
+    
+    public static function generatePassword() {
+		return passwordCreator();  	  	
+    }
+	
+}
