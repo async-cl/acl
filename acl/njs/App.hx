@@ -12,6 +12,7 @@ using acl.Core;
 using acl.njs.CouchDb;
 using acl.njs.Entity;
 using acl.njs.entity.ApiEntity;
+using acl.njs.CouchEntityDriver;
 using acl.njs.Express;
 using acl.njs.ExpressApp;
 using acl.njs.Session;
@@ -70,7 +71,7 @@ class App {
 	}
 	
 	public static function moduleInit(db:TCouchDb) {
-		Entity.init(db);
+		Entity.init(new CouchEntityDriver(db));
 		Relations.init(db);
 	}
 		

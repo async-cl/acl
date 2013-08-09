@@ -22,8 +22,7 @@ enum TRHashReply {
  }
 
 @:coreType abstract TEntityID from String  to String { }
-@:coreType abstract TEntityRev from String { }
-
+@:coreType abstract TEntityRev from String to String { }
 
 typedef TEntityBase = {
 	?_id:TEntityID
@@ -44,8 +43,28 @@ enum TEntityKeys {
 
 typedef TRelation = {
  	name:String
- };
- 
+};
+
+enum TEntityEvent<T> {
+	AfterCreate(entity:TEntity,info:T);
+	AfterUpdate(entity:TEntity,info:T);
+	AfterDelete(entity:TEntityRef,info:T);
+}
+
+interface EntityDriver {
+    function delete(entity:TEntityRef,?info:Dynamic):TOutcome<String,String> ;
+    function insert(entity:TEntity,?id:String,?info:Dynamic):TOutcome<String,TEntityRef> ;
+    function insert_<T:TEntity>(entity:T):TOutcome<String,T> ;
+    function get<T>(id:TEntityID):TOutcome<String,T>;
+    function on<T>(fn:TEntityEvent<T>->Void):Void;
+    function link(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,TEntityRef> ;
+    function unlink(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,String> ;
+    function children<T>(relation:TRelation,parent:TEntityBase):TOutcome<String,Array<T>> ;
+    function inverse<T>(relation:TRelation,child:TEntityBase):TOutcome<String,Array<T>> ;
+    function view<T>(view:String,?params:TEntityKeys,includeDocs:Bool):TOutcome<String,Array<T>> ;
+    function attach(entityRef:TEntityRef,name:String,data:Dynamic,mimeType:String):TOutcome<String,TEntityRef> ;
+}
+
 typedef TCombineVal<F,S> = Iterable<TVal<F,S>>;
 typedef TCombineIn<F,S> = Iterable<TOutcome<F,S>>;
 typedef TCombineOut<F,S> = TOutcome<F,TCombineVal<F,S>>;

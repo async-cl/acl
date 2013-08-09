@@ -99,35 +99,6 @@ class CouchDb {
 		return "CouchDb."+funcName+" "+err;
 	}
 
-	/*
-	public static function db(cnf:TCouchConf,deleteDB=false):TOutcome<String,TCouchDb> {
-		return Core.chain()
-		.link(function(dummy) {
-			return CouchDb.connect(cnf.server,cnf.user,cnf.password);
-		}).linkD(function(connection,data) {
-			data.connection = connection;
-			return if (deleteDB) destroy(connection,cnf.name) else Core.success("ok");
-		}).linkD(function(res,data) {
-			return if (deleteDB && res == "ok") create(data.connection,cnf.name) else cast Core.success("ok");
-		}).linkD(function(res,data) {
-			return use(data.connection,cnf.name);
-	    }).linkD(function(db,data) {
-            if (cnf.viewDir == null)
-                return Core.success(db);
-            
-            return CouchDb.get(db,"_design/"+cnf.viewDoc).flatMap(function(v) {
-                return if (v.isFailure()) // don't have design doc,recreate
-                    viewsFromDir(db,cnf.viewDoc,cnf.viewDir).flatMap(function(v) {
-                        trace("recreated views from "+cnf.viewDir);
-                        return Core.success(db);
-                    });
-                else
-                    Core.success(db);
-            });
-        }).dechain();
-	}
-*/
-
     public static function db(cnf:TCouchConf,deleteDB=false):TOutcome<String,TCouchDb> {
         var connection;        
 		return CouchDb.connect(cnf.server,cnf.user,cnf.password)
@@ -249,6 +220,7 @@ class CouchDb {
 	
 	public static function delete(db:TCouchDb,id:String,rev:String):TOutcome<String,TReply> {
 		var oc = new TPromise<TVal<String,TReply>>();
+        trace("Doing couchdb delete "+id+","+rev);
 		db._bucket.destroy(id,rev,function(err,body,headers) {
 			oc.complete((err != null) ? Failure(error("delete",err)) : Success({body:body,headers:headers}));
 		});
