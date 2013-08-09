@@ -9,9 +9,11 @@ using acl.Http;
  */
 class EClient {
 
-	//static var server = "http://localhost:8081";
-    //static var server = "http://www.caanread.com";
 	static var server = "";
+
+    public static function setServer(s:String) {
+        server = s;
+    }
     
 	static function post(url,prms:Dynamic,urlEncoded=false):Dynamic {
 		return Http.post_(server+url,prms,urlEncoded);
@@ -68,7 +70,7 @@ class EClient {
 	}
 	#end
 	
-	public static function entities<T:TEntity>(entityType:String,?prms:TEntityKeys):TOutcome<String,Array<T>> {
+	public static function entities<T>(entityType:String,?prms:TEntityKeys):TOutcome<String,Array<T>> {
 		return post(urlEntities,{
 			entityType:entityType,
 			prms:haxe.Serializer.run(prms)

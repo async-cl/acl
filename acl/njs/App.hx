@@ -36,31 +36,37 @@ typedef TApp<T> = {
 };
 
 class App {
-
-	static var passwordCreator:Dynamic;
+    
 	static var session:TSession<Dynamic>;
-	
-	public static function init<T>():TOutcome<String,TApp<T>> {
-	
-		passwordCreator = js.Node.require('password-generator');
-		
-		return initBase()
-		.linkD(function(db,app:TApp<T>) {
-			app.db= db;
-			trace("init session");
-			return Session.init();
-		})
-		.linkD(function(sess,app:TApp<T>) {
-			app.session = sess;
-			session = sess;
-			trace("init Express");
-			return initExpress(app.config);
-		}).finalData(function(express,app:TApp<T>) {
-			app.express = express;
-			RHash.init();
-			moduleInit(app.db);
-			routeInit(app);
-		});
+    
+	public static function create<T>(configPath):TOutcome<String,TApp<T>> {	
+		var config:TConfig = null;
+        var sess:TSession<T> = null;
+        var express:TExpressApp;
+        
+		return loadConfig(configPath)
+		    .fmap(function(cnf:TConfig) {
+			    config = cnf;
+			    return Session.init();
+		    }).fmap(function(s) {
+			    sess = s;
+			    trace("init Express");
+			    return initExpress(config);
+            }).fmap(function(exp:TExpress) {
+                express = exp;
+                return initDb(config);
+            }).fmap(function(couch:TCouchDb) {
+                return Core.success({db:couch,
+                                express:express,
+                                config:config,
+                                session:sess});
+		    }).fmap(function(app:TApp<T>) {
+                RHash.init();
+			    moduleInit(app.db);
+			    routeInit(app);
+                session=sess;
+                return Core.success(app);
+            });
 	}
 	
 	public static function moduleInit(db:TCouchDb) {
@@ -80,41 +86,23 @@ class App {
 		app.express.get(url,fn);
 	}
 	
-	public static function initBase<T>() {
-		return Core.chain()
-		.link(function(d) {
-			trace("reading config");
-			return Sys.readFile(Sys.argv()[2]);
-		})
-		.linkD(function(config,data:TApp<T>) {
-			data.config = cast haxe.Json.parse(config);
-			trace("init CouchDb");
-			trace("Config is "+data.config);
-			return initDb(data.config);
-		});
+	public static function loadConfig<T>(configPath:String):TOutcome<String,TConfig> {
+        return Sys.readFile(configPath).fmap(function(cnf:String) {
+            return Core.success(haxe.Json.parse(cnf));
+        });
 	}
 	
-	public static function checkSession<T>(req:TExpressReq):TChain<String,TSessionInfo<T>,Dynamic> {
+	public static function checkSession<T>(req:TExpressReq):TOutcome<String,TSessionInfo<T>> {
 		var sID:TSessionID = App.getsID(req);
-		return Core.chain()
-		.link(function(d) {
-			return Session.get(session,sID);
-		}).link(function(sub:TOption<T>) {
-
+	    return Session.get(session,sID).fmap(function(sub:TOption<T>) {
 			return (sub.isSome())? Core.success(Pair.create(sID,sub.extract())) : Core.failure("No session");
 		});
 	}
-	
-	static function initDb(cnf:TConfig):TOutcome<String,TCouchDb> {
-		return Core.chain()
-		.link(function(dummy) {
-			return CouchDb.connect(cnf.db.server,cnf.db.user,cnf.db.password);
-		}).linkD(function(connection,data) {
-			return connection.use(cnf.db.name);
-		}).dechain();
+
+	public static function initDb(cnf:TConfig,deleteFirst = false):TOutcome<String,TCouchDb> {
+        return CouchDb.db(cnf.db,deleteFirst);
 	}
-		
-		
+	
 	static function initExpress(config:TConfig) {
         return ExpressApp.create()
             .addStatic('Public')
@@ -138,8 +126,5 @@ class App {
         #end
     }
     
-    public static function generatePassword() {
-		return passwordCreator();  	  	
-    }
 	
 }

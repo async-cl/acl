@@ -1,9 +1,7 @@
 
 package acl;
 
-import scuts.core.Validation;
 using scuts.core.Validations;
-using scuts.core.Promise;
 using scuts.core.Promises;
 
 
@@ -82,11 +80,14 @@ class Core {
 		return new acl.Event<T>();
 	}
 	
-	public static inline function outcome<F,S>():TOutcome<F,S> {
-		return new TPromise<TVal<F,S>>();
+	public static function outcome<F,S>(?val:TVal<F,S>):TOutcome<F,S> {
+		var p = new TPromise<TVal<F,S>>();
+        if (val != null)
+            p.complete(val);
+        return p;
 	}	
 	
-	public static inline function entityRef(entity:TEntity) {
+	public static inline function entityRef(entity:TEntity):TEntityRef {
 		return {_id:entity._id,_rev:entity._rev};
 	}
 	public static function failure<F,S>(?f:F):TOutcome<F,S> {
@@ -105,17 +106,28 @@ class Core {
 		trace(d);
 		return null;
 	}
+
+    public static function map<F,S,T>(p:TOutcome<F,S>,fn:S->T):TOutcome<F,T> {
+		return p.map(function(v) {
+			return if (v.isSuccess()) Success(fn(v.extract())) else Failure(v.extractFailure());
+		});
+	}
 	
-	public static function fmap<F,S,T>(p:TOutcome<F,S>,fn:S->TOutcome<F,T>):TOutcome<F,T> {
+	public static function fmap<F,S,S2>(p:TOutcome<F,S>,fn:S->TOutcome<F,S2>):TOutcome<F,S2> {
 		return p.flatMap(function(v) {
 			return if (v.isSuccess()) fn(v.extract()) else Core.failure(v.extractFailure());
 		});		
 	}
-	
-	
-	public static function map_<F,S,T>(p:TOutcome<F,S>,fn:S->T):TOutcome<F,T> {
-		return p.map(function(v) {
-			return if (v.isSuccess()) Success(fn(v.extract())) else Failure(v.extractFailure());
+
+    public static function fmapFail<F,S,F2>(p:TOutcome<F,S>,fn:F->TOutcome<F2,S>):TOutcome<F2,S> {
+		return p.flatMap(function(v) {
+			return if (v.isFailure()) fn(v.extractFailure()) else Core.success(v.extract());
+		});
+	}
+
+	public static function mapFail<F,S,F2>(p:TOutcome<F,S>,fn:F->F2):TOutcome<F2,S> {
+		return p.flatMap(function(v) {
+			return if (v.isFailure()) Core.failure(fn(v.extractFailure())) else Core.success(v.extract());
 		});
 	}
 
@@ -128,81 +140,6 @@ class Core {
 					fail(v.extractFailure());
 			return null;
 		});
-	}
-
-	public static function chain<F,F2,S,T,D>(?start:TOutcome<F,S>,?data:D):TChain<F2,T,D> {
-		if (start == null) start = cast Core.success("dummy");
-		var data = (data == null) ? cast {} : data;
-		return cast {prm:start,data:data};
-	}
-	
-	static function linker<F,F2,S,D,T>(chain:TChain<F,S,D>,fn:S->D->TOutcome<F2,T>,?name:String) {
-		return  {
-			prm:chain.prm.flatMap(function(v) {
-				if (v.isSuccess()) {
-					var d = v.extract();
-					if (name != null) {
-						Reflect.setField(chain.data,name,d);
-					}
-					return fn(d,chain.data);
-				} else
-					return cast Core.failure(v.extractFailure());	
-			}),
-			data:chain.data,
-		};
-	}
-	
-	public static function link<F,F2,S,T,D>(chain:TChain<F,S,D>,?name:String,fn:S->TOutcome<F2,T>):TChain<F2,T,D> {
-		return linker(chain,function(s,data) {
-			return fn(s);
-		},name);
-	}
-	
-	public static function linkD<F,F2,S,T,D>(chain:TChain<F,S,D>,?name:String,fn:S->D->TOutcome<F2,T>):TChain<F2,T,D> {
-		return linker(chain,fn,name);
-	}
-	
-	public static function value<F,S,D>(chain:TChain<F,S,D>,fn:S->Void):TChain<F,S,D> {
-		chain.prm.onComplete(function(v) {
-			if (v.isSuccess())	{
-				fn(v.extract());
-			}
-			return null;
-		});
-		return chain;
-	}
-	
-	/**
-		Tap into the chain and get any data.
-	*/
-	public static function tap<F,S,D>(chain:TChain<F,S,D>,fn:S->D->Void):TChain<F,S,D> {
-		return {
-			prm:chain.prm.map(function(v) {
-				if (v.isSuccess()) {
-					fn(v.extract(),chain.data);
-				}
-				return v;
-			}),
-			data:chain.data	
-		};
-	}
-	
-	public static function dechain<F,F2,S,D>(chain:TChain<F,S,D>,?fn:S->Dynamic):TOutcome<F2,S> {
-		if (fn != null)
-			value(chain,fn);
-	
-		return cast chain.prm;
-	}
-	
-	public static function finalData<F,S,D>(chain:TChain<F,S,D>,?fn:S->D->Void):TOutcome<F,D> {
-		var oc  = new TPromise<TVal<F,D>>();
-		value(chain,function(val) {
-			if (fn != null)
-				fn(val,chain.data);
-			oc.complete(Success(chain.data));
-			return null;
-		});
-		return oc;
 	}
 
 	public static function combine<F,S>(outcomes:TCombineIn<F,S>):TCombineOut<F,S> {

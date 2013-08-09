@@ -45,7 +45,9 @@ class Extras {
 	/**
 		Return the newly inserted entity with _attachments info.
 	*/
-	public static function insertWithImage<T:TEntity>(entity:T,files:Array<TInsertFile>):TOutcome<String,T> {
+    
+/*
+    public static function insertWithImage<T:TEntity>(entity:T,files:Array<TInsertFile>):TOutcome<String,T> {
 		
 		A.ok(Reflect.field(entity,"docType") != null,"entity must have docType before insertion");
 		
@@ -57,6 +59,17 @@ class Extras {
 		}).link(function(ref) {
 			return Entity.get(ref._id); // need to get the entity again for the attachment info
 		}).dechain();
+	}
+*/
+	public static function insertWithImage<T:TEntity>(entity:T,files:Array<TInsertFile>):TOutcome<String,T> {
+		
+		A.ok(Reflect.field(entity,"docType") != null,"entity must have docType before insertion");
+		
+	    return Entity.insert(entity).fmap(function(ref:TEntityRef) {
+			return attachFiles(ref,files);
+		}).fmap(function(ref) {
+			return Entity.get(ref._id); // need to get the entity again for the attachment info
+		});
 	}
 	
 	static function attachFiles(entityRef:TEntityRef,files:Array<TInsertFile>):TOutcome<String,TEntityRef> {

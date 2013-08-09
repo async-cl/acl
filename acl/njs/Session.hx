@@ -1,10 +1,11 @@
 package acl.njs;
 
-using acl.Core;
 using scuts.core.Promises;
 import scuts.core.Pair;
 import js.Node;
 using acl.njs.RHash;
+
+using acl.Core;
 
 /**
  * ...
@@ -34,7 +35,7 @@ class Session {
 	
 	public static function create<T>(sess:TSession<T>,o:T):TOutcome<String,TSessionID> {
 		var sID:String = uuid.v1();
-		return sess.hash.set(sID,o).map_(function(reply) {
+		return sess.hash.set(sID,o).map(function(reply) {
 			return cast sID;
 		});
 	}

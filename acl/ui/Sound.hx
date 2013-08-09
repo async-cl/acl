@@ -49,6 +49,7 @@ class Sound {
             sound.play().addEventListener(TFEvent.SOUND_COMPLETE,function(e) {
                 prm.complete(true);
             });
+
         } else
             prm.complete(true);
         return prm;

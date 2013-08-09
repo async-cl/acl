@@ -64,15 +64,12 @@ class Entity {
 		Good for getting attachment info in one fell swoop.
 	*/
 	public static function insert_<T:TEntity>(s:T):TOutcome<String,T> {
-    	return Core.chain()
-    	.link(function(d) {
-    		return insert(s);
-    	}).link(function(er:TEntityRef) {
+    	return insert(s).fmap(function(er:TEntityRef) {
     		return Entity.get(er._id);
-    	}).dechain();
+    	});
     }
     
-	public static function get<T:TEntity>(id:TEntityID):TOutcome<String,T> {
+	public static function get<T>(id:TEntityID):TOutcome<String,T> {
 		return _db.get_(cast id);
 	}
 	
@@ -92,7 +89,7 @@ class Entity {
 		return Relations.inverse_(relation,child._id);
 	}
 	
-	public static function view<T:TEntity>(view:String,?params:TEntityKeys,includeDocs=false):TOutcome<String,Array<T>> {
+	public static function view<T>(view:String,?params:TEntityKeys,includeDocs=false):TOutcome<String,Array<T>> {
 		return _db.view_('wise',view,params,includeDocs);
 	}
 

@@ -80,18 +80,16 @@ class Relations {
 	}
 	
 	public static function linked_<T>(r:TRelation,parentID:TEntityID):TOutcome<String,Array<T>> {
-		return linked(r,parentID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
-			return Success(r.body.rows.map(function(row) { return row.doc;}));
-		}));
+		return linked(r,parentID).fmap(function(r:TReplyRows<T>) {
+			return Core.success(r.body.rows.map(function(row) { return row.doc;}));
+		});
 	}
 	
 	public static function inverse_<T>(r:TRelation,childID:TEntityID):TOutcome<String,Array<T>> {
-		return inverse(r,childID).map(Validations.flatMap._2(function(r:TReplyRows<T>) {
-			return Success(r.body.rows.map(function(row) { return row.doc;}));
-		}));
+		return inverse(r,childID).fmap(function(r:TReplyRows<T>) {
+			return Core.success(r.body.rows.map(function(row) { return row.doc;}));
+		});
 	}
-	
-	
 	
 
 }

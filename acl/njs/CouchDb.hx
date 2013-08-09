@@ -14,7 +14,7 @@ using scuts.core.Validations;
 using scuts.core.Functions;
 
 using acl.Core;
-
+using acl.njs.Sys;
 
 typedef TCouchIDRev = TEntityRef;
 typedef  TCouchObj = TEntity;
@@ -24,6 +24,8 @@ typedef TCouchConf = {
 	name:String,
 	user:String,
 	password:String,
+    viewDir:String,
+    viewDoc:String
 };  
 
 typedef TCouch = {
@@ -96,23 +98,64 @@ class CouchDb {
 	static function error(funcName:String,err:String) {
 		return "CouchDb."+funcName+" "+err;
 	}
-	
+
+	/*
 	public static function db(cnf:TCouchConf,deleteDB=false):TOutcome<String,TCouchDb> {
 		return Core.chain()
 		.link(function(dummy) {
 			return CouchDb.connect(cnf.server,cnf.user,cnf.password);
 		}).linkD(function(connection,data) {
 			data.connection = connection;
-			return if (deleteDB) destroy(connection,cnf.name); else Core.success("ok");
+			return if (deleteDB) destroy(connection,cnf.name) else Core.success("ok");
 		}).linkD(function(res,data) {
 			return if (deleteDB && res == "ok") create(data.connection,cnf.name) else cast Core.success("ok");
 		}).linkD(function(res,data) {
 			return use(data.connection,cnf.name);
-		}).dechain();
+	    }).linkD(function(db,data) {
+            if (cnf.viewDir == null)
+                return Core.success(db);
+            
+            return CouchDb.get(db,"_design/"+cnf.viewDoc).flatMap(function(v) {
+                return if (v.isFailure()) // don't have design doc,recreate
+                    viewsFromDir(db,cnf.viewDoc,cnf.viewDir).flatMap(function(v) {
+                        trace("recreated views from "+cnf.viewDir);
+                        return Core.success(db);
+                    });
+                else
+                    Core.success(db);
+            });
+        }).dechain();
 	}
-	
+*/
+
+    public static function db(cnf:TCouchConf,deleteDB=false):TOutcome<String,TCouchDb> {
+        var connection;        
+		return CouchDb.connect(cnf.server,cnf.user,cnf.password)
+            .fmap(function(cnt) {
+			    connection = cnt;
+			    return if (deleteDB) destroy(connection,cnf.name) else Core.success("ok");
+            }).fmap(function(res) {
+			    return if (deleteDB && res == "ok") create(connection,cnf.name) else cast Core.success("ok");
+		    }).fmap(function(res) {
+			    return use(connection,cnf.name);
+	        }).fmap(function(db) {
+                if (cnf.viewDir == null)
+                    return Core.success(db);
+            
+                return CouchDb.get(db,"_design/"+cnf.viewDoc).flatMap(function(v) {
+                    return if (v.isFailure()) // don't have design doc,recreate
+                        viewsFromDir(db,cnf.viewDoc,cnf.viewDir).flatMap(function(v) {
+                            trace("recreated views from "+cnf.viewDir);
+                            return Core.success(db);
+                        });
+                    else
+                        Core.success(db);
+                });
+            });
+	}
+    
+    
 	public static function connect(url:String,?user:String,?password:String):TOutcome<String,TCouch> {
-	
 		if (N == null) {
 			N = Node.require('nano');
 		}
@@ -160,7 +203,9 @@ class CouchDb {
 	public static function create(cdb:TCouch,name:String):TOutcome<String,TCouchDb> {
 		var oc = new TPromise<TVal<String,TCouchDb>>();
 		session(cdb).db.create(name,function(e,s) {
-			oc.complete((e != null) ? Failure(error("create",e)) : Success(s));
+            var r = (e != null) ? Failure(error("create",e)) : Success(s);
+            trace("created DB  "+name+", "+r);
+			oc.complete(r);
 		});	
 		return oc;
 	}
@@ -187,9 +232,9 @@ class CouchDb {
 		Do an insert but just return the id,rev of the newly inserted object.
 	*/
 	public static function insert_(db:TCouchDb,obj:Dynamic,?id:String):TOutcome<String,TCouchIDRev> {
-		return insert(db,obj,id).map(Validations.flatMap._2(function(reply:TReply) {
-            return Success(replyToIDRev(reply));
-        }));
+		return insert(db,obj,id).fmap(function(reply:TReply) {
+            return Core.success(replyToIDRev(reply));
+        });
 	}
 	
 	public static function destroy(cdb:TCouch,name:String):TOutcome<String,String> {
@@ -291,9 +336,9 @@ class CouchDb {
 	public static function view_<T>(db:TCouchDb,design:String,viewName:String,?params:TEntityKeys,includeDocs=false):TOutcome<String,Array<T>> {
 		return 
 			view(db,design,viewName,params,includeDocs)
-			.map(Validations.flatMap._2(function(rr:TReplyRows<T>) { 
-				return Success(rr.body.rows.map(function(r) return if (includeDocs) r.doc else r.value)); 
-			}));
+			.fmap(function(rr:TReplyRows<T>) { 
+				return Core.success(rr.body.rows.map(function(r) return if (includeDocs) r.doc else r.value)); 
+			});
 	}
 			
 	public static function createViews(db:TCouchDb,designName:String,views:Dynamic):TOutcome<String,TReply> {

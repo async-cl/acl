@@ -410,7 +410,8 @@ class Arrays
   {
     for (i in 0...arr.length) 
     {
-      if (p(arr[i])) return Some(i);
+
+        if (p(arr[i])) return Some(i);
     }
     return None;
   }

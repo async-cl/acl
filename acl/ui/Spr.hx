@@ -79,8 +79,7 @@ class Spr {
 		var p = new TPromise<TSprite>();
 		var r =new flash.net.URLRequest(url);
 		var l = new flash.display.Loader();
-		l.load(r);
-		
+		l.load(r);		
 		l.contentLoaderInfo.addEventListener(TFEvent.COMPLETE,function(r) {
 			var s = new TSprite();
 			s.addChild(l);

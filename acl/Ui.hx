@@ -14,6 +14,7 @@ typedef TField = flash.text.TextField;
 typedef TDisplayObj = flash.display.DisplayObject;
 typedef TSprite = flash.display.Sprite;
 typedef TBitmap = flash.display.Bitmap;
+typedef TBitmapData = flash.display.BitmapData;
 typedef TSound = flash.media.Sound;
 typedef TGraphics = flash.display.Graphics;
 typedef TDim = {width:Int,height:Int};
