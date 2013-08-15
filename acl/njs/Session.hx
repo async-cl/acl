@@ -41,6 +41,7 @@ class Session {
 	}
 	
 	public static function update<T>(sess:TSession<T>,sID:TSessionID,o:T) {
+        trace("yes updating session with "+sID);
 		return sess.hash.set(cast sID,o);
 	}
 	

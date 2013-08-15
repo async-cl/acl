@@ -20,6 +20,8 @@ typedef TExpressApp = TExpress;
 
 class ExpressApp {
 
+    static var stylus:Dynamic = js.Node.require("stylus");
+
     public static function create():TExpress {
 	    var app = Express.create();
 	    app.use(Express.module().favicon());
@@ -31,11 +33,13 @@ class ExpressApp {
     }
     
     public static function addStatic(app:TExpressApp,dir) {
+        trace("setting static "+Sys.path.join(Sys.dirname,dir));
 	    app.use(Express.doStatic(Sys.path.join(Sys.dirname,dir)));
 	    return app;
     }
     
     public static function addMount(app:TExpressApp,mountPoint:String,dir:String) {
+        trace("mounting "+dir + " on "+mountPoint);
 	    app.use(mountPoint,Express.doStatic(dir));
 	    return app;
     }
@@ -43,31 +47,44 @@ class ExpressApp {
     public static function addJade(app:TExpressApp,jadeDir:String) {
 	    app.set("views",Sys.dirname + "/" + jadeDir);
 	    app.set("view engine","jade");
+
+        trace("setting jade directory to "+jadeDir);
 	    return app;
     }
     
     public static function addStylus(app:TExpressApp,from,to) {
-	    var stylus:Dynamic = js.Node.require("stylus");
 	    var compileMethod = function(str,path) {
+            trace("stylus to "+path);
 		    return stylus(str).set("compress",true).set("filename",path);
 	    };
+
+        var cnf = { debug : true,
+                    force : true,
+                    src : Sys.dirname + "/" + from,
+                    dest : Sys.dirname + "/" + to,
+                    compress:true
+                 //   compile : compileMethod
+                  };
         
-	    app.use(stylus.middleware({ debug : true,
-                                    force : true,
-                                    dest : Sys.dirname + "/" + from, src : Sys.dirname + "/" + to,
-                                    compile : compileMethod}));
+	    app.use(stylus.middleware(cnf));
+
+        trace("setting stylus mapping from "+cnf.src+" to "+cnf.dest);
+        
 	    return app;
     }
     
-    
     public static function addCookies(app:TExpressApp,cookiePw:String,cookieKey:String) {
 	    app.use(Express.module().cookieParser(cookiePw));
-	    app.use(Express.module().cookieSession({ key : cookieKey,
-                                                 cookie : { path : "/",
-                                                            httpOnly : false,
-                                                            maxAge : null
-                                                          }
-                                               }));
+	    app.use(Express.module().cookieSession({
+            key : cookieKey,
+            cookie : { path : "/",
+                       httpOnly : false,
+                       maxAge : null
+                     }
+        }));
+
+        trace("setting cookie pw/key to "+cookiePw+"/"+cookieKey);
+        
 	    return app;
     }
     
@@ -76,20 +93,19 @@ class ExpressApp {
 	    return app;
     }
         
-    public static function serve(app:TExpressApp,port:Int,?host:String) {
+    public static function serve(app:TExpressApp,port:Int,?host:String):TOutcome<String,TExpressApp> {
 	    var oc = new scuts.core.Promise();
 	    if(host == null) host = "localhost";
 	    var server = js.Node.http.createServer(cast app);
 	    server.listen(port,null,function() {
 		    var n = app.get("app_name");
-		    if(n == null) n = "AclServer";
-		    trace(n + " on port " + port);
+		    if (n == null) n = "Listening " else n + " listening ";
+		    trace(n + "on port " + port);
 		    oc.complete(scuts.core.Validation.Success(app));
 	    });
 	    return oc;
     }
 
-    
     public static function onCompletedReply<E,T>(oc:TOutcome<E,T>,res) {
 	    oc.onComplete(function(v) {
 		    res.send(200,haxe.Serializer.run(v));
@@ -100,7 +116,5 @@ class ExpressApp {
     public static function validationReply<T>(v:Validation<String,T>,res) {
 	    res.send(200,haxe.Serializer.run(v));
     }
-
-
 
 }

@@ -3,7 +3,7 @@ package acl;
 
 using scuts.core.Validations;
 using scuts.core.Promises;
-
+using scuts.core.Strings;
 
 typedef TPromise<T> = scuts.core.Promise<T>;
 typedef TEvent<T> = acl.Event<T>;
@@ -70,9 +70,11 @@ typedef TCombineIn<F,S> = Iterable<TOutcome<F,S>>;
 typedef TCombineOut<F,S> = TOutcome<F,TCombineVal<F,S>>;
 
 class Core {
-	
+
+    	
 	static var errorEvents = new Event<Dynamic>();
-	
+
+
 	public static function err(e:Dynamic) {
 		errorEvents.emit(e);
 	}
@@ -216,5 +218,21 @@ class Core {
 		};
 	}
 
+    public static function partition<T>(a:Array<T>,num:Int) {
+        var p = [];
+        var ntimes = Math.floor(a.length / num);
+        
+        for (i in 0...ntimes)
+            p.push(a.slice(i*num,num));
+        return p;
+    }
+
+
+    public static function logHeader(text:String) {
+        var t = "\n"+text; 
+        trace(t);
+        trace("-".times(t.length+1));
+    }
+    
 }
 

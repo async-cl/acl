@@ -4,7 +4,7 @@ package acl.njs;
  * ...
  * @author ritchie
  */
-using scuts.core.Validations;
+using scuts.core.Arrays;
 using scuts.core.Options;
 import scuts.core.Pair;
 
@@ -25,9 +25,15 @@ typedef TConfig = {
 	activity_center:String,
 	db:TCouchConf,
 	httpHost:String,
-	httpPort:Int
+	httpPort:Int,
+    express: {
+        root:String,
+        mountPoints:Array<String>,
+        jade:String,
+        stylus:Array<String>,
+        cookie:Array<String>
+    }
 };  
-
    
 typedef TApp<T> = {
 	db:TCouchDb,
@@ -39,46 +45,43 @@ typedef TApp<T> = {
 class App {
     
 	static var session:TSession<Dynamic>;
-    
+
+
 	public static function create<T>(configPath):TOutcome<String,TApp<T>> {	
 		var config:TConfig = null;
-        var sess:TSession<T> = null;
         var express:TExpressApp;
-        
 		return loadConfig(configPath)
 		    .fmap(function(cnf:TConfig) {
 			    config = cnf;
+                "Init Session".logHeader();
 			    return Session.init();
 		    }).fmap(function(s) {
-			    sess = s;
-			    trace("init Express");
+			    session = s;
+			    "Init Express".logHeader();
 			    return initExpress(config);
             }).fmap(function(exp:TExpress) {
                 express = exp;
-                return initDb(config);
-            }).fmap(function(couch:TCouchDb) {
-                return Core.success({db:couch,
-                                express:express,
-                                config:config,
-                                session:sess});
-		    }).fmap(function(app:TApp<T>) {
-                RHash.init();
-			    moduleInit(app.db);
-			    routeInit(app);
-                session=sess;
-                return Core.success(app);
+                return Core.success({
+                    db:null,
+                    express:express,
+                    config:config,
+                    session:session
+                });
+            }).fmap(function(app:TApp<T>) {
+                // the app without db, do we have a db?
+                return if (config.db != null) {
+                    "CouchDb".logHeader();
+                    CouchDb.db(config.db,false).fmap(function(db) {
+                        app.db = db;
+                        Entity.init(new CouchEntityDriver(db));
+                        Relations.init(db);
+                        ApiEntity.addRoutes(app);
+                        return Core.success(app);
+                    });
+                } else Core.success(app);
             });
 	}
-	
-	public static function moduleInit(db:TCouchDb) {
-		Entity.init(new CouchEntityDriver(db));
-		Relations.init(db);
-	}
-		
-	public static function routeInit<T>(app:TApp<T>) {
-        ApiEntity.addRoutes(app);
-	}
-	
+
 	public static function post<T>(app:TApp<T>,url:String,fn:TExpressReq->TExpressResp->Void) {
 		app.express.post(url,fn);
 	}
@@ -99,19 +102,31 @@ class App {
 			return (sub.isSome())? Core.success(Pair.create(sID,sub.extract())) : Core.failure("No session");
 		});
 	}
-
-	public static function initDb(cnf:TConfig,deleteFirst = false):TOutcome<String,TCouchDb> {
-        return CouchDb.db(cnf.db,deleteFirst);
-	}
-	
+    
 	static function initExpress(config:TConfig) {
-        return ExpressApp.create()
-            .addStatic('Public')
-            .addJade('Jade')
-            .addStylus('Stylus','Public/css')
-            .addMount('/_js',config.client_js)
-            .addCookies('ritchie','caan')
-            .serve(config.httpPort);
+        var cnf = config.express;
+        var exp = ExpressApp.create();
+   
+        exp.addJade((cnf.jade != null) ? cnf.jade : "Jade");
+        
+        if (cnf.stylus != null) {
+            exp.addStylus(cnf.stylus[0],cnf.stylus[1]);
+        } else
+            exp.addStylus("Stylus","Public/css");
+        
+        if (cnf.cookie != null) {
+            exp.addCookies(cnf.cookie[0],cnf.cookie[1]);
+        }
+        
+        if (cnf.mountPoints != null) {
+            Core.partition(cnf.mountPoints,2).each(function(mp) {
+                exp.addMount(mp[0],mp[1]);
+            });
+        }
+
+        exp.addStatic(cnf.root);
+        
+        return exp.serve(config.httpPort);
 	}
 	
 	public static function getsID(req:TExpressReq):TSessionID {

@@ -24,7 +24,7 @@ class RHash {
 	static var client:Dynamic;
 
 	public static function init(?port:Int,?host:String,?options:Dynamic) {
-		trace("initing client");
+		trace("RHash - Initing Redis client");
 		client = redis.createClient(port,host,options);
 	}
 
