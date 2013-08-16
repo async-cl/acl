@@ -18,7 +18,6 @@ using acl.Core;
 using acl.J;
 using acl.jq.Tiles;
 using caan.Session;
-using wise.Def;
 
 typedef TDialog<T> = {
     container:TJq,
