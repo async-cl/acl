@@ -31,7 +31,7 @@ class ApiEntity {
 		app.post(EClient.urlEntityParents,parents);
 	}
 	
-	public static function insertEntity(req:TExpressReq,res:TExpressResp) {
+	public static function insertEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
             .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var e:TEntity = req.body.e;
@@ -39,7 +39,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function deleteEntity(req:TExpressReq,res:TExpressResp) {
+	public static function deleteEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var e:TEntityRef = req.body.er;
@@ -47,7 +47,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function linkEntity(req:TExpressReq,res:TExpressResp) {
+	public static function linkEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var parent:TEntityBase = req.body.p;
@@ -58,7 +58,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function unlinkEntity(req:TExpressReq,res:TExpressResp) {
+	public static function unlinkEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var parent:TEntityBase = req.body.p;
@@ -69,7 +69,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function insertWithImage(req:TExpressReq,res:TExpressResp) {
+	public static function insertWithImage<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var entity:TEntity = req.body;
@@ -82,7 +82,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function listEntity(req:TExpressReq,res:TExpressResp) {
+	public static function listEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 //		req.checkSession()
 //		.link(function(si:TSessionInfo<Dynamic>) {
 			var view = req.body.entityType;
@@ -93,7 +93,7 @@ class ApiEntity {
 	    Entity.view(view,prms).onCompletedReply(res);
 	}
 	
-	public static function getEntity(req:TExpressReq,res:TExpressResp) {
+	public static function getEntity<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var id:TEntityID = req.body.id;
@@ -101,7 +101,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 	
-	public static function children(req:TExpressReq,res:TExpressResp) {
+	public static function children<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		    .fmap(function(si:TSessionInfo<Dynamic>) {
 			    var relation:String = req.body.relation,
@@ -110,7 +110,7 @@ class ApiEntity {
 		    }).onCompletedReply(res);
 	}
 
-	public static function parents(req:TExpressReq,res:TExpressResp) {
+	public static function parents<T>(req:TAppReq<T>,res:TExpressResp) {
 		req.checkSession()
 		.fmap(function(si:TSessionInfo<Dynamic>) {
 			var relation:String = req.body.relation,

@@ -106,15 +106,4 @@ class ExpressApp {
 	    return oc;
     }
 
-    public static function onCompletedReply<E,T>(oc:TOutcome<E,T>,res) {
-	    oc.onComplete(function(v) {
-		    res.send(200,haxe.Serializer.run(v));
-		    return null;
-	    });
-    }
-    
-    public static function validationReply<T>(v:Validation<String,T>,res) {
-	    res.send(200,haxe.Serializer.run(v));
-    }
-
 }

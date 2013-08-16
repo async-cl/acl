@@ -42,14 +42,19 @@ typedef TApp<T> = {
 	session:TSession<T>
 };
 
+
+typedef TAppReq<T> = { > TExpressReq,
+   acl:TApp<T>
+}
+
+typedef TAppRes = TExpressResp;
+
 class App {
     
-	static var session:TSession<Dynamic>;
-
-
 	public static function create<T>(configPath):TOutcome<String,TApp<T>> {	
 		var config:TConfig = null;
         var express:TExpressApp;
+        var session:TSession<Dynamic>;
 		return loadConfig(configPath)
 		    .fmap(function(cnf:TConfig) {
 			    config = cnf;
@@ -61,12 +66,19 @@ class App {
 			    return initExpress(config);
             }).fmap(function(exp:TExpress) {
                 express = exp;
-                return Core.success({
+                var app = {
                     db:null,
                     express:express,
                     config:config,
                     session:session
+                };
+
+                exp.use(function(req,res,next) {
+                    Reflect.setField(req,"acl",app);
+                    next();
                 });
+                
+                return Core.success(app);
             }).fmap(function(app:TApp<T>) {
                 // the app without db, do we have a db?
                 return if (config.db != null) {
@@ -82,12 +94,12 @@ class App {
             });
 	}
 
-	public static function post<T>(app:TApp<T>,url:String,fn:TExpressReq->TExpressResp->Void) {
-		app.express.post(url,fn);
+	public static function post<T>(app:TApp<T>,url:String,fn:TAppReq<T>->TAppRes->Void) {
+		app.express.post(url,cast fn);
 	}
 	
-	public static function get<T>(app:TApp<T>,url:String,fn:TExpressReq->TExpressResp->Void) {
-		app.express.get(url,fn);
+	public static function get<T>(app:TApp<T>,url:String,fn:TAppReq<T>->TAppRes->Void) {
+		app.express.get(url,cast fn);
 	}
 	
 	public static function loadConfig<T>(configPath:String):TOutcome<String,TConfig> {
@@ -95,15 +107,8 @@ class App {
             return Core.success(haxe.Json.parse(cnf));
         });
 	}
-	
-	public static function checkSession<T>(req:TExpressReq):TOutcome<String,TSessionInfo<T>> {
-		var sID:TSessionID = App.getsID(req);
-	    return Session.get(session,sID).fmap(function(sub:TOption<T>) {
-			return (sub.isSome())? Core.success(Pair.create(sID,sub.extract())) : Core.failure("No session");
-		});
-	}
-    
-	static function initExpress(config:TConfig) {
+
+	static function initExpress<T>(config:TConfig) {
         var cnf = config.express;
         var exp = ExpressApp.create();
    
@@ -123,24 +128,39 @@ class App {
                 exp.addMount(mp[0],mp[1]);
             });
         }
-
-        exp.addStatic(cnf.root);
         
+        exp.addStatic(cnf.root);        
         return exp.serve(config.httpPort);
 	}
 	
-	public static function getsID(req:TExpressReq):TSessionID {
+	public static function getsID(req:TAppReq<Dynamic>):TSessionID {
 		#if TEST
 			return js.Node.fs.readFileSync("cmd_session.txt");
 		#else
     	var sc = req.signedCookies;
-    	var caan = Reflect.field(sc,"caan");
-    	if (caan != null) {
-        	return Reflect.field(caan,"sID");
+    	var cookie = Reflect.field(sc,req.acl.config.express.cookie[1]);
+    	if (cookie != null) {
+        	return Reflect.field(cookie,"sID");
         }
         return null;
         #end
     }
-    
+
+    public static function checkSession<T>(req:TAppReq<T>):TOutcome<String,TSessionInfo<T>> {
+		var sID:TSessionID = App.getsID(req);
+	    return Session.get(req.acl.session,sID).fmap(function(sub:TOption<T>) {
+			return (sub.isSome())? Core.success(Pair.create(sID,sub.extract())) : Core.failure("No session");
+		});
+    }
+
+    public static function logout<T>(req:TAppReq<T>):TOutcome<String,String> {
+        var sID = App.getsID(req);
+        return req.acl.session.del(sID).fmap(function(v){
+            trace('clearing cookies'+req.session);
+            Reflect.deleteField(req.session,"caan");
+            req.session = null;
+            return Core.success("ok");
+        });
+    }
 	
 }

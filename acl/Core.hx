@@ -1,6 +1,7 @@
 
 package acl;
 
+using scuts.core.Validation;
 using scuts.core.Validations;
 using scuts.core.Promises;
 using scuts.core.Strings;
@@ -71,9 +72,7 @@ typedef TCombineOut<F,S> = TOutcome<F,TCombineVal<F,S>>;
 
 class Core {
 
-    	
 	static var errorEvents = new Event<Dynamic>();
-
 
 	public static function err(e:Dynamic) {
 		errorEvents.emit(e);
@@ -152,6 +151,15 @@ class Core {
 		});
 	}
 
+    public static function onFail<F,S>(p:TOutcome<F,S>,fn:F->Void) {
+        p.onComplete(function(v) {
+            if (v.isFailure()) {
+                fn(v.extractFailure());
+            }
+            return v;
+        });
+    }
+    
 	public static function onSuccess<F,S,T>(p:TOutcome<F,S>,fn:S->Void,?fail:F->Void) {
 		p.onComplete(function(v) {
 			if (v.isSuccess())
@@ -221,7 +229,6 @@ class Core {
     public static function partition<T>(a:Array<T>,num:Int) {
         var p = [];
         var ntimes = Math.floor(a.length / num);
-        
         for (i in 0...ntimes)
             p.push(a.slice(i*num,num));
         return p;
@@ -233,6 +240,17 @@ class Core {
         trace(t);
         trace("-".times(t.length+1));
     }
+
+    public static function onCompletedReply<E,T>(oc:TOutcome<E,T>,res) {
+	    oc.onComplete(function(v) {
+		    res.send(200,haxe.Serializer.run(v));
+		    return null;
+	    });
+    }
     
+    public static function validationReply<T>(v:Validation<String,T>,res) {
+	    res.send(200,haxe.Serializer.run(v));
+    }
+
 }
 
