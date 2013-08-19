@@ -1,0 +1,6 @@
+
+-cp ../../../node-api
+-cp ../
+-cp .
+-js testconfigs.js
+-main TestConfigs
