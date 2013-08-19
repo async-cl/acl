@@ -22,18 +22,26 @@ using acl.njs.Sys;
 
 typedef TConf<T> = Pair<String,T>;
 
+typedef TConfCache<T> = {
+    var cache:Map<String,Array<TConf<T>>>;
+}
+
 class Configs {
 
-    static var cache:Map<String,Array<TConf<Dynamic>>> = new Map();
+    public static function cacheCreate<T>():TOutcome<String,TConfCache<T>> {
+        return Core.success({
+            cache:new Map()
+        });
+    }
     
-    public static function cachedFromDir<T>(dir:String,?fileName:String):TOutcome<String,Array<TConf<T>>> {
+    public static function get<T>(cache:TConfCache<T>,dir:String,?fileName:String):TOutcome<String,Array<TConf<T>>> {
         var dirReader = if (fileName != null) perDir.bind(_,fileName); else fromDir ;
             
         var prm:TOutcome<String,Array<TConf<T>>> = Core.outcome();
-        switch(cache.getOption(dir)) {
+        switch(cache.cache.getOption(dir)) {
         case None:
             dirReader(dir).onSuccess(function(a:Array<TConf<T>>) {
-                cache.set(dir,a);
+                cache.cache.set(dir,a);
                 prm.complete(Success(a));
             });
         case Some(cached):
@@ -62,7 +70,7 @@ class Configs {
                return readWith(dir,name).fmap(function(conf:String) {
                    return Core.success(Pair.create(name,haxe.Json.parse(conf)));
                });
-           }));
+           }));                     
        }).fmap(function(confs) {
            return Core.success(confs.map(function(c) {
                return c.option();

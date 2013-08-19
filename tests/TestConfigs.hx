@@ -7,15 +7,17 @@ class TestConfigs {
 
     public static function main() {
 
-        Configs.cachedFromDir("/home/ritchie/Projects/caanread/Public/activities/","config.json").onSuccess(function(a) {
-            trace(a);
-        });
-
-        Configs.cachedFromDir("/home/ritchie/Projects/caanread/Products/").onSuccess(function(a) {
-            trace(a);
-            Configs.cachedFromDir("/home/ritchie/Projects/caanread/Products/").onSuccess(function(a) {
+        Configs.cacheCreate().onSuccess(function(cache) {
+        
+            cache.get("/home/ritchie/Projects/caanread/Public/activities/","config.json").onSuccess(function(a) {
+                trace(a);
             });
 
+            cache.get("/home/ritchie/Projects/caanread/Products/").onSuccess(function(a) {
+                trace(a);
+                cache.get("/home/ritchie/Projects/caanread/Products/").onSuccess(function(a) {
+                });
+            });
         });
 
 
