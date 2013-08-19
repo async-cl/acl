@@ -52,6 +52,26 @@ enum TEntityEvent<T> {
 	AfterDelete(entity:TEntityRef,info:T);
 }
 
+
+
+#if NEWDRIVER
+
+interface EntityDriver {1
+    function delete(entity:TEntityRef,?info:Dynamic):TOutcome<String,String> ;
+    function insert(entity:TEntity,?id:String,?info:Dynamic):TOutcome<String,TEntityRef> ;
+    function get<T>(id:TEntityID):TOutcome<String,T>;
+    function on<T>(fn:TEntityEvent<T>->Void):Void;
+    function link(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,TEntityRef> ;
+    function unlink(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,String> ;
+    function children<T>(relation:TRelation,parent:TEntityBase):TOutcome<String,Array<T>> ;
+    function inverse<T>(relation:TRelation,child:TEntityBase):TOutcome<String,Array<T>> ;
+    function query<T:TEntity>(query:Dynamic,?view:String):TOutcome<String,Array<T>>;
+    //function view<T>(view:String,?params:TEntityKeys,includeDocs:Bool):TOutcome<String,Array<T>> ;
+    //function attach(entityRef:TEntityRef,name:String,data:Dynamic,mimeType:String):TOutcome<String,TEntityRef> ;
+}
+
+#else
+
 interface EntityDriver {
     function delete(entity:TEntityRef,?info:Dynamic):TOutcome<String,String> ;
     function insert(entity:TEntity,?id:String,?info:Dynamic):TOutcome<String,TEntityRef> ;
@@ -66,9 +86,20 @@ interface EntityDriver {
     function attach(entityRef:TEntityRef,name:String,data:Dynamic,mimeType:String):TOutcome<String,TEntityRef> ;
 }
 
+
+#end
+
+
+
 typedef TCombineVal<F,S> = Iterable<TVal<F,S>>;
 typedef TCombineIn<F,S> = Iterable<TOutcome<F,S>>;
 typedef TCombineOut<F,S> = TOutcome<F,TCombineVal<F,S>>;
+
+
+typedef Serializer = {
+  var serialize:Dynamic->String;
+  var deSerialize:String->Dynamic;
+}
 
 class Core {
 
@@ -251,6 +282,16 @@ class Core {
     public static function validationReply<T>(v:Validation<String,T>,res) {
 	    res.send(200,haxe.Serializer.run(v));
     }
+
+    public static function jsonSerializer():Serializer untyped {
+        return { serialize:haxe.Json.stringify,deSerialize:haxe.Json.parse};
+    }
+
+    /*
+    public static function haxeSerializer():Serializer {
+        return {serialize:haxe.Serializer.run,deSerialize:haxe.Unserializer.run};
+    }
+*/
 
 }
 

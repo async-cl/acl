@@ -21,8 +21,6 @@ using acl.njs.Relations;
 import acl.njs.RHash;
 
 typedef TConfig = {
-	client_js:String,
-	activity_center:String,
 	db:TCouchConf,
 	httpHost:String,
 	httpPort:Int,
@@ -51,7 +49,7 @@ typedef TAppRes = TExpressResp;
 
 class App {
     
-	public static function create<T>(configPath):TOutcome<String,TApp<T>> {	
+	public static function create<T>(configPath,deleteDBFirst=false):TOutcome<String,TApp<T>> {	
 		var config:TConfig = null;
         var express:TExpressApp;
         var session:TSession<Dynamic>;
@@ -81,18 +79,24 @@ class App {
                 return Core.success(app);
             }).fmap(function(app:TApp<T>) {
                 // the app without db, do we have a db?
-                return if (config.db != null) {
-                    "CouchDb".logHeader();
-                    CouchDb.db(config.db,false).fmap(function(db) {
+                return if (config.db != null)
+                    initDb(config.db,deleteDBFirst).fmap(function(db) {
                         app.db = db;
-                        Entity.init(new CouchEntityDriver(db));
-                        Relations.init(db);
                         ApiEntity.addRoutes(app);
                         return Core.success(app);
-                    });
-                } else Core.success(app);
+                    })
+                else Core.success(app);
             });
 	}
+
+    public static function initDb(config:TCouchConf,deleteDBFirst=false):TOutcome<String,TCouchDb> {
+        "CouchDb".logHeader();
+        return CouchDb.db(config,deleteDBFirst).fmap(function(db) {
+            Entity.init(new CouchEntityDriver(db));
+            Relations.init(db);
+            return Core.success(db);
+        });
+    }
 
 	public static function post<T>(app:TApp<T>,url:String,fn:TAppReq<T>->TAppRes->Void) {
 		app.express.post(url,cast fn);

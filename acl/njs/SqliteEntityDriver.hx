@@ -6,19 +6,20 @@ using scuts.core.Validations;
 using scuts.core.Functions;
 
 using acl.Core;
-using acl.njs.CouchDb;
+using acl.njs.SqliteStore;
 using acl.njs.Entity;
 using acl.njs.entity.ApiEntity;
 
 
-class CouchEntityDriver implements EntityDriver {
+class SqliteEntityDriver implements EntityDriver {
 
-	static var _db:TCouchDb;
+	static var _db:TSqliteBucket
 	static var _event:Event<TEntityEvent<Dynamic>> = Core.event();
 	
-   	public function new(db:TCouchDb) {
-   		trace("init Couch Entity Driver");
+   	public function new(db:TSqliteBucket) {
+   		trace("init Sqlite Entity Driver");
    		_db = db;
+        
    	}
 		
 	public function delete<T>(entity:TEntityRef,?info:T):TOutcome<String,String> {
@@ -33,11 +34,9 @@ class CouchEntityDriver implements EntityDriver {
 		_event.on(cast fn);
 	}
 	
-	public function insert(entity:TEntity,?id:String,?info:Dynamic):TOutcome<String,TEntityRef> {
+	public function insert<T:TEntity>(entity:T,?id:String,?info:Dynamic):TOutcome<String,T> {
 		var isFirstTime = entity._id == null && entity._rev == null;
-		return _db.insert_(entity,id).fmap(function(er) {
-			entity._id = er._id;
-			entity._rev = er._rev;
+		return _db.insert(entity,id).fmap(function(entity) {
 			trace('got post insert event for ${entity.docType} firstTime? ${isFirstTime}');
 			_event.emit((isFirstTime) ? AfterCreate(entity,info) : AfterUpdate(entity,info));
 			return Core.success(er);
@@ -54,11 +53,12 @@ class CouchEntityDriver implements EntityDriver {
     }
     
 	public function get<T>(id:TEntityID):TOutcome<String,T> {
-		return _db.get_(cast id);
+		return _db.get(cast id);
 	}
 	
-	public function link(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,TEntityRef> {
-		return Relations.link(relation,parent._id,child._id);
+	public function link(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,TEntity> {
+		return db.insert({id1:parent._id,id2:child._id,rel:r.name,docType:"relation"});
+
 	}
 	
 	public function unlink(relation:TRelation,parent:TEntityBase,child:TEntityBase):TOutcome<String,String> {
@@ -81,9 +81,7 @@ class CouchEntityDriver implements EntityDriver {
     	return _db.attach(cast entityRef._id,cast entityRef._rev,name,data,mimeType);
     }
     
-    public function query(params:Dynamic,?view:String) {
-        
-    }
+
 
 
 }
