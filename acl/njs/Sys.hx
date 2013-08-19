@@ -361,7 +361,7 @@ class Sys {
 		return prm;
 	}
 
-	public static function readFile(path:String,?enc:SysEnc):TOutcome<String,Dynamic>{
+	public static function readFile(path:String,?enc:SysEnc):TOutcome<String,String>{
 		var oc = Core.outcome();
 		trace("reading file "+path);
 		Node.fs.readFile(path,Sys.getEnc(enc),function(err,s) {
